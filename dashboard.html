@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>پنل کاربری راسان دیزاین</title>
+  <style>
+    * { font-family: 'Vazirmatn', sans-serif; }
+    body { margin: 0; padding: 0; background: #f0f0f0; }
+    header {
+      background: #0d6efd; color: white; padding: 20px; text-align: center;
+      position: relative;
+    }
+    .container { padding: 20px; max-width: 800px; margin: auto; }
+    .card {
+      background: white; padding: 20px; border-radius: 15px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .btn-main {
+      background: #198754; color: white; border: none;
+      padding: 10px 20px; border-radius: 8px; cursor: pointer;
+    }
+    .logout-btn {
+      background: #dc3545; color: white; padding: 10px 20px;
+      border: none; border-radius: 10px; cursor: pointer; float: left;
+    }
+    .service-menu { display: none; margin-top: 20px; }
+    .service-menu button {
+      display: block; width: 100%; margin: 5px 0; padding: 10px;
+      background: #6c757d; color: white; border: none; border-radius: 6px;
+    }
+    #project-form { display: none; margin-top: 20px; }
+    input, textarea {
+      width: 100%; margin: 10px 0; padding: 8px; border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    .signature {
+      border: 1px dashed #aaa; padding: 10px; text-align: center;
+      margin-top: 15px;
+    }
+    canvas {
+      border: 1px dashed #ccc;
+      width: 100%; height: 200px; background-color: #f9f9f9;
+    }
+    .projects-list { margin-top: 20px; }
+    .project-item { background: #e9ecef; padding: 10px; border-radius: 6px; margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🎉 پنل کاربری راسان دیزاین</h1>
+    <h2>حتما و حتما VPN روشن باشد</h2>
+  </header>
+
+  <div class="container">
+    <div class="card">
+      <a href="index.html"><button class="logout-btn" onclick="logout()">خروج از حساب</button></a>
+      <h2 id="welcome-msg">در حال بارگذاری...</h2>
+      <button class="btn-main" onclick="toggleServiceMenu()">➕ افزودن پروژه</button>
+
+      <div class="service-menu" id="service-menu">
+        <button onclick="selectService('ساخت وب')">ساخت وب</button>
+        <button onclick="selectService('ساخت برنامه')">ساخت برنامه</button>
+        <button onclick="selectService('ساخت برنامه موبایلی')">ساخت برنامه موبایلی</button>
+        <button onclick="selectService('ساخت DNS بازی')">ساخت DNS بازی</button>
+        <button onclick="selectService('ساخت عکس و لوگو')">ساخت عکس و لوگو</button>
+        <button onclick="selectService('ادیت و فتوشاپ')">ادیت و فتوشاپ</button>
+      </div>
+
+      <div id="project-form">
+        <h3>فرم احراز هویت و قرارداد</h3>
+        <input type="text" id="firstName" placeholder="نام">
+        <input type="text" id="lastName" placeholder="نام خانوادگی">
+        <input type="text" id="nationalCode" placeholder="کد ملی">
+        <input type="text" id="birthDate" placeholder="تاریخ تولد (مثلاً 1380/01/01)">
+        <input type="text" id="phoneNumber" placeholder="شماره تلفن">
+
+        <textarea id="contract" rows="10" placeholder="متن قرارداد به‌صورت خودکار پر می‌شود..." readonly></textarea>
+        
+        <!-- امضا -->
+        <div class="signature">
+          امضای آنلاین:
+          <canvas id="signature-pad" width="400" height="200"></canvas>
+          <br/>
+          <button onclick="clearSignature()">پاک کردن امضا</button>
+        </div>
+
+        <button class="btn-main" onclick="submitProject()">ارسال پروژه</button>
+      </div>
+
+      <div class="projects-list" id="projects-list">
+        <h3>پروژه‌های قبلی:</h3>
+        <div id="projects"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyD_Zyp4-it4jqoDDKoHQYkJZcW6wpgzNIw",
+      authDomain: "rasandesign-c13b0.firebaseapp.com",
+      projectId: "rasandesign-c13b0",
+      storageBucket: "rasandesign-c13b0.appspot.com",
+      messagingSenderId: "1062175326327",
+      appId: "1:1062175326327:web:ab5c3e2b3b64b7b43a9060"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    const botToken = "7851763243:AAEKxm55yC3PelOQKsDl3tD_LRVkbzN1ggk";
+    const chatId = "7650517255";
+    let signaturePad = new SignaturePad(document.getElementById('signature-pad'));
+
+    auth.onAuthStateChanged((user) => {
+      if (user) {
+        document.getElementById("welcome-msg").innerText = `سلام ${user.email} 👋 خوش اومدی!`;
+        loadProjects(user.uid);  // بارگذاری پروژه‌ها برای کاربر وارد شده
+      } else {
+        window.location.href = "login.html";
+      }
+    });
+
+    function logout() {
+      auth.signOut().then(() => {
+        window.location.href = "index.html";
+      });
+    }
+
+    function toggleServiceMenu() {
+      const menu = document.getElementById("service-menu");
+      menu.style.display = menu.style.display === "none" ? "block" : "none";
+    }
+
+    function selectService(service) {
+      document.getElementById("project-form").style.display = "block";
+      document.getElementById("contract").value = `این قرارداد به تاریخ ... بین شرکت راسان دیزاین و ... منعقد می‌گردد.\nموضوع: ${service}\n(۱. در صورت عدم پرداخت توسط مشتری یا عدم پیشرفت پروژه، کارفرما حق فسخ قرارداد را دارد.
+۲. مشتری می‌تواند در صورت عدم رضایت از پیشرفت پروژه، قرارداد را فسخ نماید، مشروط بر اینکه هزینه‌های انجام شده توسط کارفرما پرداخت گردد.
+
+این قرارداد کامل نیست جهت کامل کردن اطلاعات و قرارداد فرم را پر کنید تا در سریع ترین حالت ممکن پیام دهیم)`;
+    }
+
+    function submitProject() {
+      const user = firebase.auth().currentUser;
+      const firstName = document.getElementById("firstName").value;
+      const lastName = document.getElementById("lastName").value;
+      const nationalCode = document.getElementById("nationalCode").value;
+      const birthDate = document.getElementById("birthDate").value;
+      const phoneNumber = document.getElementById("phoneNumber").value;
+      const contract = document.getElementById("contract").value;
+
+      if (!firstName || !lastName || !nationalCode || !birthDate || !phoneNumber || signaturePad.isEmpty()) {
+        alert("لطفاً تمام فیلدها را پر کنید.");
+        return;
+      }
+
+      const signature = signaturePad.toDataURL(); // Get the signature in base64 format
+
+      // ذخیره پروژه در Firestore
+      const service = document.querySelector(".service-menu button.active")?.innerText || 'نامشخص';
+      const projectData = {
+        firstName,
+        lastName,
+        nationalCode,
+        birthDate,
+        phoneNumber,
+        contract,
+        signature,
+        service,
+        userId: user.uid, // ذخیره شناسه کاربری
+        date: firebase.firestore.FieldValue.serverTimestamp(),
+      };
+
+      db.collection("projects").add(projectData).then((docRef) => {
+        const projectLink = `https://rasandesign-c13b0.web.app/projects/${docRef.id}`; // لینک پروژه
+
+        const message = `📝 پروژه جدید ثبت شد:\n📍 لینک پروژه: ${projectLink}`;
+
+        // ارسال پیام به تلگرام
+        fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chat_id: chatId,
+            text: message,
+            parse_mode: "HTML" // ارسال پیام به صورت HTML
+          })
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.ok) {
+            alert("✅ پروژه ثبت شد برای تکمیل قرارداد و ... به شما پیام خواهیم داد!");
+            loadProjects(user.uid);  // بارگذاری پروژه‌ها بعد از ثبت
+          } else {
+            console.error("خطا در ارسال پیام به تلگرام:", data.error_code, data.description);
+            alert("❌خطا در ارسال پیام .");
+          }
+        })
+        .catch(error => {
+          console.error('خطا در ارسال پیام:', error);
+          alert("❌ خطا در ارسال پیام.");
+        });
+      }).catch((error) => {
+        console.error("خطا در ذخیره پروژه:", error);
+        alert("❌ خطا در ثبت پروژه.");
+      });
+    }
+
+    function loadProjects(userId) {
+      const projectsDiv = document.getElementById("projects");
+      projectsDiv.innerHTML = ''; // Clear previous projects
+
+      db.collection("projects").where("userId", "==", userId).get().then((querySnapshot) => {
+        querySnapshot.forEach((doc) => {
+          const project = doc.data();
+          const projectElement = document.createElement("div");
+          projectElement.classList.add("project-item");
+          projectElement.innerHTML = `پروژه: ${project.service} | ${project.firstName} ${project.lastName}`;
+          projectsDiv.appendChild(projectElement);
+        });
+      });
+    }
+
+    function clearSignature() {
+      signaturePad.clear(); // Clear the signature pad
+    }
+  </script>
+</body>
+</html>
