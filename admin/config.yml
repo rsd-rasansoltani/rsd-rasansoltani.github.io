@@ -7,11 +7,19 @@ media_folder: "images/uploads"
 public_folder: "/images/uploads"
 
 collections:
-  - name: "posts"
-    label: "پست‌ها"
-    folder: "posts"
-    create: true
-    slug: "{{slug}}"
-    fields:
-      - {label: "عنوان", name: "title", widget: "string"}
-      - {label: "محتوا", name: "body", widget: "markdown"}
+  - name: "settings"
+    label: "تنظیمات سایت"
+    files:
+      - file: "content/about.md"
+        label: "درباره ما"
+        name: "about"
+        fields:
+          - {label: "عنوان", name: "title", widget: "string"}
+          - {label: "متن", name: "body", widget: "markdown"}
+
+      - file: "content/contact.md"
+        label: "تماس با ما"
+        name: "contact"
+        fields:
+          - {label: "عنوان", name: "title", widget: "string"}
+          - {label: "متن", name: "body", widget: "markdown"}
