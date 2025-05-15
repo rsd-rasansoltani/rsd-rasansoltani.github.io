@@ -1,0 +1,17 @@
+backend:
+  name: github
+  repo: rsd-rasansoltani/rsd-rasansoltani.github.io
+  branch: main
+
+media_folder: "images/uploads"
+public_folder: "/images/uploads"
+
+collections:
+  - name: "posts"
+    label: "پست‌ها"
+    folder: "posts"
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - {label: "عنوان", name: "title", widget: "string"}
+      - {label: "محتوا", name: "body", widget: "markdown"}
