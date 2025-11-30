@@ -1,183 +1,412 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <title>ورود / ثبت‌نام</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn&display=swap" rel="stylesheet">
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
-
-  <style>
-    body {
-      font-family: 'Vazirmatn', sans-serif;
-      background: #f5f5f5;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-    }
-    .box {
-      background: white;
-      padding: 2rem;
-      border-radius: 1rem;
-      width: 100%;
-      max-width: 400px;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-    }
-    h2 { text-align: center; }
-    input, button {
-      width: 100%;
-      padding: 10px;
-      margin: 6px 0;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-    }
-    button {
-      background-color: #0077ff;
-      color: white;
-      border: none;
-    }
-    button:hover {
-      background-color: #005bcc;
-    }
-    .toggle, .forgot {
-      text-align: center;
-      color: #0077ff;
-      cursor: pointer;
-      margin-top: 10px;
-    }
-    p { color: red; text-align: center; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ورود به سیستم | راسان دیزاین</title>
+    
+    <!-- فونت وزیرمتن -->
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- تنظیمات فونت و استایل‌های سفارشی -->
+    <style>
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+            background-color: #f3f4f6;
+            background-image: radial-gradient(#3b82f6 0.5px, #f3f4f6 0.5px);
+            background-size: 10px 10px;
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+        }
+        .input-field {
+            transition: all 0.3s ease;
+        }
+        .input-field:focus {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.5);
+        }
+        /* مخفی کردن المان‌ها با انیمیشن */
+        .hidden-section {
+            opacity: 0;
+            pointer-events: none; /* جلوگیری از کلیک در حین محو شدن */
+            transition: opacity 0.5s ease-in-out;
+        }
+        .visible-section {
+            display: block;
+            opacity: 1;
+            pointer-events: auto;
+            animation: fadeIn 0.5s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .loader {
+            border: 3px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 3px solid #3498db;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
 </head>
-<body>
+<body class="min-h-screen flex items-center justify-center p-4">
 
-<div class="box">
-  <h2 id="form-title">ورود</h2>
-  <input type="email" id="email" placeholder="ایمیل">
-  <input type="password" id="password" placeholder="رمز عبور">
-  <input type="text" id="code-input" placeholder="کد تایید" style="display:none">
-  <button onclick="handleSignup()" id="signup-btn" style="display:none">ارسال کد تایید</button>
-  <button onclick="verifyCode()" id="verify-btn" style="display:none">تایید کد و ساخت حساب</button>
-  <button onclick="handleLogin()" id="login-btn">ورود</button>
-  <p id="message"></p>
-  <div class="toggle" onclick="toggleForm()">قبلاً ثبت‌نام کرده‌اید؟ وارد شوید</div>
-</div>
+    <!-- کانتینر اصلی -->
+    <div class="glass w-full max-w-md rounded-2xl p-8 relative overflow-hidden">
+        
+        <!-- هدر لوگو -->
+        <div class="text-center mb-8">
+            <div class="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/50">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+            </div>
+            <h2 id="main-title" class="text-2xl font-bold text-gray-800">خوش آمدید</h2>
+            <p id="sub-title" class="text-gray-500 text-sm mt-2">لطفاً وارد حساب کاربری خود شوید</p>
+        </div>
 
-<script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyD_Zyp4-it4jqoDDKoHQYkJZcW6wpgzNIw",
-    authDomain: "rasandesign-c13b0.firebaseapp.com",
-    projectId: "rasandesign-c13b0",
-    storageBucket: "rasandesign-c13b0.appspot.com",
-    messagingSenderId: "704936216056",
-    appId: "1:704936216056:web:xxxxxxx"
-  };
-  firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
+        <!-- باکس پیام خطا/موفقیت -->
+        <div id="alert-box" class="hidden mb-4 p-3 rounded-lg text-sm text-center"></div>
 
-  let verificationCode = null;
-  let emailForVerification = "";
-  let passwordForVerification = "";
+        <!-- فرم ورود -->
+        <div id="login-form" class="visible-section space-y-4">
+            <div>
+                <label class="block text-gray-700 text-sm font-bold mb-2">ایمیل</label>
+                <input type="email" id="login-email" class="input-field w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:outline-none bg-gray-50" placeholder="name@example.com">
+            </div>
+            <div>
+                <label class="block text-gray-700 text-sm font-bold mb-2">رمز عبور</label>
+                <input type="password" id="login-password" class="input-field w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:outline-none bg-gray-50" placeholder="••••••••">
+            </div>
+            <div class="flex justify-end">
+                <button onclick="switchView('reset')" class="text-sm text-blue-600 hover:text-blue-800 transition">رمز عبور را فراموش کرده‌اید؟</button>
+            </div>
+            <button id="btn-login" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg shadow-lg shadow-blue-500/30 transition transform active:scale-95 flex justify-center items-center gap-2">
+                <span>ورود به حساب</span>
+            </button>
+            <div class="mt-6 text-center text-sm">
+                حساب کاربری ندارید؟ <button onclick="switchView('signup')" class="text-blue-600 font-bold hover:underline">ثبت‌نام کنید</button>
+            </div>
+        </div>
 
-  emailjs.init("iccQZRMkErSE3Sj-z"); // 👈 Public key
+        <!-- فرم ثبت نام -->
+        <div id="signup-form" class="hidden-section space-y-4" style="display: none;">
+            <div>
+                <label class="block text-gray-700 text-sm font-bold mb-2">ایمیل</label>
+                <input type="email" id="signup-email" class="input-field w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:outline-none bg-gray-50">
+            </div>
+            <div>
+                <label class="block text-gray-700 text-sm font-bold mb-2">رمز عبور</label>
+                <input type="password" id="signup-password" class="input-field w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:outline-none bg-gray-50" placeholder="حداقل ۶ کاراکتر">
+            </div>
+            <div>
+                <label class="block text-gray-700 text-sm font-bold mb-2">تکرار رمز عبور</label>
+                <input type="password" id="signup-confirm-password" class="input-field w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:outline-none bg-gray-50">
+            </div>
+            <button id="btn-signup" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg shadow-lg shadow-green-500/30 transition transform active:scale-95 flex justify-center items-center gap-2">
+                <span>ایجاد حساب کاربری</span>
+            </button>
+            <div class="mt-6 text-center text-sm">
+                قبلاً ثبت‌نام کرده‌اید؟ <button onclick="switchView('login')" class="text-blue-600 font-bold hover:underline">وارد شوید</button>
+            </div>
+        </div>
 
-  // بررسی وضعیت ورود کاربر
-  auth.onAuthStateChanged(user => {
-    if (user) {
-      // اگر کاربر وارد شده باشد، به داشبورد هدایت می‌شود
-      window.location.href = "/dashborud.html";
-    }
-  });
+        <!-- فرم بازیابی رمز -->
+        <div id="reset-form" class="hidden-section space-y-4" style="display: none;">
+            <p class="text-sm text-gray-600 text-center mb-4">ایمیل خود را وارد کنید تا لینک بازیابی رمز عبور برای شما ارسال شود.</p>
+            <div>
+                <label class="block text-gray-700 text-sm font-bold mb-2">ایمیل</label>
+                <input type="email" id="reset-email" class="input-field w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:outline-none bg-gray-50">
+            </div>
+            <button id="btn-reset" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-lg shadow-lg shadow-purple-500/30 transition transform active:scale-95 flex justify-center items-center gap-2">
+                <span>ارسال لینک بازیابی</span>
+            </button>
+            <div class="mt-6 text-center text-sm">
+                <button onclick="switchView('login')" class="text-gray-500 hover:text-gray-800 flex items-center justify-center gap-1 mx-auto">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+                    بازگشت به ورود
+                </button>
+            </div>
+        </div>
 
-  function handleSignup() {
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
-    const msg = document.getElementById("message");
+        <!-- صفحه داشبورد موقت (نمایش بعد از ورود) -->
+        <div id="user-dashboard" class="hidden-section text-center space-y-6" style="display: none;">
+            <div class="bg-green-100 text-green-700 p-4 rounded-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <h3 class="font-bold text-lg">خوش آمدید!</h3>
+                <p id="user-email-display" class="text-sm mt-1 dir-ltr"></p>
+            </div>
+            
+            <div id="verification-warning" class="hidden bg-yellow-50 text-yellow-800 p-3 rounded text-sm border border-yellow-200">
+                ایمیل شما هنوز تایید نشده است. لطفاً صندوق ورودی خود را چک کنید.
+                <button id="btn-resend-verify" class="block mt-2 text-blue-600 underline text-xs mx-auto">ارسال مجدد لینک تایید</button>
+            </div>
 
-    if (!email || !password) {
-      msg.innerText = "ایمیل و رمز را وارد کنید.";
-      return;
-    }
+            <button id="btn-logout" class="w-full border border-red-500 text-red-500 hover:bg-red-50 font-bold py-2 rounded-lg transition">
+                خروج از حساب
+            </button>
+        </div>
 
-    verificationCode = Math.floor(100000 + Math.random() * 900000); // کد 6 رقمی
-    emailForVerification = email;
-    passwordForVerification = password;
+    </div>
 
-    emailjs.send("service_xz9xzpd", "template_e3w2buk", {
-      email: email,
-      passcode: verificationCode,
-      time: "30 دقیقه"
-    }).then(() => {
-      msg.style.color = "green";
-      msg.innerText = "کد تایید به ایمیل شما ارسال شد.";
-      document.getElementById("code-input").style.display = "block";
-      document.getElementById("verify-btn").style.display = "block";
-      document.getElementById("signup-btn").style.display = "none";
-    }).catch((error) => {
-      msg.innerText = "خطا در ارسال ایمیل: " + error.text;
-    });
-  }
+    <!-- اسکریپت‌ها -->
+    <script type="module">
+        // ایمپورت ماژولار فایربیس
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+        import { 
+            getAuth, 
+            createUserWithEmailAndPassword, 
+            signInWithEmailAndPassword, 
+            onAuthStateChanged, 
+            signOut,
+            sendEmailVerification,
+            sendPasswordResetEmail
+        } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
-  function verifyCode() {
-    const enteredCode = document.getElementById("code-input").value;
-    const msg = document.getElementById("message");
+        // کانفیگ فایربیس
+        const firebaseConfig = {
+            apiKey: "AIzaSyD_Zyp4-it4jqoDDKoHQYkJZcW6wpgzNIw",
+            authDomain: "rasandesign-c13b0.firebaseapp.com",
+            projectId: "rasandesign-c13b0",
+            storageBucket: "rasandesign-c13b0.appspot.com",
+            messagingSenderId: "704936216056",
+            appId: "1:704936216056:web:94050563c2f1320e6bc20d",
+            measurementId: "G-G9XXD35REK"
+        };
 
-    if (enteredCode == verificationCode) {
-      auth.createUserWithEmailAndPassword(emailForVerification, passwordForVerification)
-        .then(() => {
-          msg.style.color = "green";
-          msg.innerText = "ثبت‌نام موفق بود. اکنون وارد شوید.";
-          toggleForm(true);
-        })
-        .catch(err => showFriendlyError(err, msg));
-    } else {
-      msg.innerText = "کد وارد شده نادرست است.";
-    }
-  }
+        // راه‌اندازی فایربیس
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
 
-  function handleLogin() {
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
-    const msg = document.getElementById("message");
+        // المان‌های DOM
+        const views = {
+            login: document.getElementById('login-form'),
+            signup: document.getElementById('signup-form'),
+            reset: document.getElementById('reset-form'),
+            dashboard: document.getElementById('user-dashboard')
+        };
+        const alertBox = document.getElementById('alert-box');
+        const mainTitle = document.getElementById('main-title');
+        const subTitle = document.getElementById('sub-title');
 
-    auth.signInWithEmailAndPassword(email, password)
-      .then(() => {
-        // اگر ورود موفق بود، به داشبورد هدایت می‌شود
-        window.location.href = "/dashboard.html";
-      })
-      .catch(error => showFriendlyError(error, msg));
-  }
+        // تابع تغییر ویو (صفحات) - اصلاح شده برای جلوگیری از ناپدید شدن
+        window.switchView = (viewName) => {
+            hideAlert();
+            const target = views[viewName]; // ویوی هدف را مشخص می‌کنیم
 
-  function toggleForm(forceLogin = false) {
-    const isLogin = forceLogin || document.getElementById("login-btn").style.display === "none";
-    document.getElementById("form-title").innerText = isLogin ? "ورود" : "ثبت‌نام";
-    document.getElementById("login-btn").style.display = isLogin ? "inline-block" : "none";
-    document.getElementById("signup-btn").style.display = isLogin ? "none" : "inline-block";
-    document.getElementById("verify-btn").style.display = "none";
-    document.getElementById("code-input").style.display = "none";
-    document.getElementById("message").innerText = "";
-  }
+            Object.values(views).forEach(el => {
+                // اگر این ویو همان ویوی هدف است، آن را مخفی نکن!
+                if (el === target) return;
 
-  function showFriendlyError(error, msgElement) {
-    if (error.code === "auth/network-request-failed") {
-      msgElement.innerHTML = `❌ اتصال به سرور برقرار نشد.<br> لطفا یا به DNS یا به VPN وصی شوید <br> <b>1.1.1.1</b> و <b>1.0.0.1</b><br>`;
-    } else if (error.code === "auth/invalid-login-credentials") {
-      msgElement.innerText = "❌ ایمیل یا رمز عبور اشتباه است.";
-    } else if (error.code === "auth/email-already-in-use") {
-      msgElement.innerText = "⛔ این ایمیل قبلاً ثبت‌نام شده است.";
-    } else if (error.code === "auth/weak-password") {
-      msgElement.innerText = "رمز عبور باید حداقل ۶ کاراکتر باشد.";
-    } else {
-      msgElement.innerText = "خطا: " + error.message;
-    }
-  }
+                el.classList.remove('visible-section');
+                el.classList.add('hidden-section');
+                
+                // فقط در صورتی display:none کن که هنوز کلاس مخفی دارد
+                // این کار باعث می‌شود اگر کاربر سریع بین صفحات جابجا شد، تداخل پیش نیاید
+                setTimeout(() => {
+                    if (el.classList.contains('hidden-section')) {
+                        el.style.display = 'none';
+                    }
+                }, 500); 
+            });
 
-  // با فراخوانی تابع toggleForm(false) پیش‌فرض فرم ورود نمایش داده می‌شود
-  toggleForm(true); 
-</script>
+            // نمایش ویوی هدف
+            target.style.display = 'block';
+            
+            // یک تاخیر بسیار کوتاه برای اعمال انیمیشن
+            setTimeout(() => {
+                target.classList.remove('hidden-section');
+                target.classList.add('visible-section');
+            }, 10);
 
+            // تغییر تایتل‌ها
+            if (viewName === 'login') {
+                mainTitle.innerText = "خوش آمدید";
+                subTitle.innerText = "لطفاً وارد حساب کاربری خود شوید";
+            } else if (viewName === 'signup') {
+                mainTitle.innerText = "ایجاد حساب";
+                subTitle.innerText = "اطلاعات خود را برای ثبت‌نام وارد کنید";
+            } else if (viewName === 'reset') {
+                mainTitle.innerText = "بازیابی رمز";
+                subTitle.innerText = "رمز عبور خود را فراموش کرده‌اید؟";
+            } else {
+                mainTitle.innerText = "پنل کاربری";
+                subTitle.innerText = "";
+            }
+        };
+
+        // نمایش پیام‌ها (خطا یا موفقیت)
+        function showAlert(message, type = 'error') {
+            alertBox.className = `mb-4 p-3 rounded-lg text-sm text-center font-medium ${type === 'error' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`;
+            alertBox.innerHTML = message;
+            alertBox.classList.remove('hidden');
+        }
+
+        function hideAlert() {
+            alertBox.classList.add('hidden');
+        }
+
+        // دیکشنری خطاهای فارسی
+        function getFriendlyErrorMessage(error) {
+            console.error(error); // برای دیباگ
+            switch (error.code) {
+                case 'auth/email-already-in-use': return '⛔ این ایمیل قبلاً ثبت شده است.';
+                case 'auth/invalid-email': return '⚠️ فرمت ایمیل اشتباه است.';
+                case 'auth/user-not-found': return '❌ کاربری با این ایمیل یافت نشد.';
+                case 'auth/wrong-password': return '🔒 رمز عبور اشتباه است.';
+                case 'auth/weak-password': return '⚠️ رمز عبور باید حداقل ۶ کاراکتر باشد.';
+                case 'auth/network-request-failed': return '🌐 خطای اتصال! لطفاً DNS یا VPN خود را بررسی کنید (1.1.1.1).';
+                case 'auth/too-many-requests': return '✋ درخواست‌های زیادی ارسال شده. لطفاً کمی صبر کنید.';
+                case 'auth/missing-password': return 'لطفا رمز عبور را وارد کنید.';
+                default: return `خطای ناشناخته: ${error.message}`;
+            }
+        }
+
+        // ایجاد لودینگ روی دکمه
+        function setLoading(btnId, isLoading, defaultText) {
+            const btn = document.getElementById(btnId);
+            if (isLoading) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="loader"></span> کمی صبر کنید...';
+                btn.classList.add('opacity-75', 'cursor-not-allowed');
+            } else {
+                btn.disabled = false;
+                btn.innerHTML = `<span>${defaultText}</span>`;
+                btn.classList.remove('opacity-75', 'cursor-not-allowed');
+            }
+        }
+
+        // ------------------------------------------
+        // لاجیک ثبت نام (SignUp)
+        // ------------------------------------------
+        document.getElementById('btn-signup').addEventListener('click', async () => {
+            const email = document.getElementById('signup-email').value;
+            const pass = document.getElementById('signup-password').value;
+            const confirmPass = document.getElementById('signup-confirm-password').value;
+
+            if (!email || !pass) return showAlert('لطفاً تمام فیلدها را پر کنید.');
+            if (pass !== confirmPass) return showAlert('رمز عبور و تکرار آن مطابقت ندارند.');
+
+            setLoading('btn-signup', true, '');
+            
+            try {
+                // 1. ساخت اکانت
+                const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+                const user = userCredential.user;
+
+                // 2. ارسال ایمیل تاییدیه (نیتیو فایربیس)
+                await sendEmailVerification(user);
+
+                showAlert('✅ ثبت‌نام موفق! لینک تایید به ایمیل شما ارسال شد. لطفاً اینباکس و اسپم را چک کنید.', 'success');
+                
+                // پاکسازی فرم
+                document.getElementById('signup-password').value = '';
+                document.getElementById('signup-confirm-password').value = '';
+
+                // به صفحه داشبورد هدایت میشه توسط لیسنر authStateChanged
+            } catch (error) {
+                showAlert(getFriendlyErrorMessage(error));
+            } finally {
+                setLoading('btn-signup', false, 'ایجاد حساب کاربری');
+            }
+        });
+
+        // ------------------------------------------
+        // لاجیک ورود (Login)
+        // ------------------------------------------
+        document.getElementById('btn-login').addEventListener('click', async () => {
+            const email = document.getElementById('login-email').value;
+            const pass = document.getElementById('login-password').value;
+
+            if (!email || !pass) return showAlert('لطفاً ایمیل و رمز عبور را وارد کنید.');
+
+            setLoading('btn-login', true, '');
+
+            try {
+                await signInWithEmailAndPassword(auth, email, pass);
+                // ریدایرکت خودکار انجام میشه
+            } catch (error) {
+                showAlert(getFriendlyErrorMessage(error));
+            } finally {
+                setLoading('btn-login', false, 'ورود به حساب');
+            }
+        });
+
+        // ------------------------------------------
+        // لاجیک بازیابی رمز (Forgot Password)
+        // ------------------------------------------
+        document.getElementById('btn-reset').addEventListener('click', async () => {
+            const email = document.getElementById('reset-email').value;
+            if (!email) return showAlert('لطفاً ایمیل خود را وارد کنید.');
+
+            setLoading('btn-reset', true, '');
+
+            try {
+                await sendPasswordResetEmail(auth, email);
+                showAlert('📩 لینک بازیابی رمز عبور ارسال شد. ایمیل خود را چک کنید.', 'success');
+            } catch (error) {
+                showAlert(getFriendlyErrorMessage(error));
+            } finally {
+                setLoading('btn-reset', false, 'ارسال لینک بازیابی');
+            }
+        });
+
+        // ------------------------------------------
+        // لاجیک خروج (Logout)
+        // ------------------------------------------
+        document.getElementById('btn-logout').addEventListener('click', () => {
+            signOut(auth).then(() => {
+                showAlert('با موفقیت خارج شدید.', 'success');
+            });
+        });
+
+        document.getElementById('btn-resend-verify').addEventListener('click', async () => {
+             const user = auth.currentUser;
+             if(user) {
+                 await sendEmailVerification(user);
+                 alert('لینک جدید ارسال شد.');
+             }
+        });
+
+        // ------------------------------------------
+        // پایش وضعیت کاربر (Auth Listener)
+        // ------------------------------------------
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // کاربر لاگین است
+                console.log("User Logged In:", user.email);
+                
+                // پر کردن اطلاعات داشبورد
+                document.getElementById('user-email-display').innerText = user.email;
+                
+                // بررسی تایید ایمیل
+                if (!user.emailVerified) {
+                    document.getElementById('verification-warning').classList.remove('hidden');
+                } else {
+                    document.getElementById('verification-warning').classList.add('hidden');
+                }
+
+                switchView('dashboard');
+            } else {
+                // کاربر لاگین نیست
+                switchView('login');
+            }
+        });
+
+    </script>
 </body>
 </html>
