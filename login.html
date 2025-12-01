@@ -6,10 +6,10 @@
     <title>ورود | ثبت‌نام</title>
     
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
-    
     <script src="https://cdn.tailwindcss.com"></script>
     
     <style>
+        /* ... (استایل‌های CSS شما بدون تغییر) ... */
         body {
             font-family: 'Vazirmatn', sans-serif;
             background-color: #f3f4f6;
@@ -34,7 +34,6 @@
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.5s ease-in-out;
-            /* برای انیمیشن خروج، دیباگ نشود تا انیمیشن اجرا شود */
         }
         .visible-section {
             display: block;
@@ -132,10 +131,25 @@
                 </button>
             </div>
         </div>
+        
+        <div id="verify-wait-view" class="hidden-section text-center space-y-4" style="display: none;">
+            <div class="bg-blue-100 text-blue-700 p-4 rounded-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                <h3 class="font-bold text-lg">ایمیل تایید ارسال شد!</h3>
+                <p class="text-sm mt-2">لطفاً صندوق ورودی خود را چک کنید. **لینک تایید ممکن است در پوشه اسپم (Spam/Junk) قرار گرفته باشد.**</p>
+                <p class="text-xs mt-3 text-gray-500">پس از تایید، می‌توانید با ایمیل خود وارد حساب شوید.</p>
+            </div>
+            <button onclick="switchView('login')" class="w-full border border-gray-300 text-gray-700 hover:bg-gray-50 font-bold py-2 rounded-lg transition">
+                بازگشت به صفحه ورود
+            </button>
+        </div>
+
     </div>
 
     <script type="module">
-        // ایمپورت ماژولار فایربیس
+        // ... (ایمپورت‌ها و کانفیگ فایربیس بدون تغییر) ...
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
         import { 
             getAuth, 
@@ -143,7 +157,9 @@
             signInWithEmailAndPassword, 
             onAuthStateChanged, 
             sendEmailVerification,
-            sendPasswordResetEmail
+            sendPasswordResetEmail,
+            // برای خروج در صورت ورود خودکار ناخواسته
+            signOut 
         } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
         // کانفیگ فایربیس
@@ -157,7 +173,6 @@
             measurementId: "G-G9XXD35REK"
         };
 
-        // راه‌اندازی فایربیس
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
 
@@ -165,13 +180,14 @@
         const views = {
             login: document.getElementById('login-form'),
             signup: document.getElementById('signup-form'),
-            reset: document.getElementById('reset-form')
+            reset: document.getElementById('reset-form'),
+            wait: document.getElementById('verify-wait-view') // اضافه شدن ویو انتظار
         };
         const alertBox = document.getElementById('alert-box');
         const mainTitle = document.getElementById('main-title');
         const subTitle = document.getElementById('sub-title');
 
-        // تابع تغییر ویو (صفحات) - بدون داشبورد
+        // ... (توابع switchView, showAlert, getFriendlyErrorMessage, setLoading بدون تغییرات اساسی در لاجیک) ...
         window.switchView = (viewName) => {
             hideAlert();
             const target = views[viewName]; 
@@ -206,21 +222,19 @@
             } else if (viewName === 'reset') {
                 mainTitle.innerText = "بازیابی رمز";
                 subTitle.innerText = "رمز عبور خود را فراموش کرده‌اید؟";
+            } else if (viewName === 'wait') { // تایتل جدید برای انتظار
+                mainTitle.innerText = "تایید ایمیل";
+                subTitle.innerText = "نیاز به تایید ایمیل برای ورود";
             }
         };
-
-        // نمایش پیام‌ها (خطا یا موفقیت)
         function showAlert(message, type = 'error') {
             alertBox.className = `mb-4 p-3 rounded-lg text-sm text-center font-medium ${type === 'error' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`;
             alertBox.innerHTML = message;
             alertBox.classList.remove('hidden');
         }
-
         function hideAlert() {
             alertBox.classList.add('hidden');
         }
-
-        // دیکشنری خطاهای فارسی
         function getFriendlyErrorMessage(error) {
             console.error(error); 
             switch (error.code) {
@@ -235,8 +249,6 @@
                 default: return `خطای ناشناخته: ${error.message}`;
             }
         }
-
-        // ایجاد لودینگ روی دکمه
         function setLoading(btnId, isLoading, defaultText) {
             const btn = document.getElementById(btnId);
             if (isLoading) {
@@ -250,8 +262,9 @@
             }
         }
 
+
         // ------------------------------------------
-        // لاجیک ثبت نام (SignUp)
+        // لاجیک ثبت نام (SignUp) - **تغییر کلیدی**
         // ------------------------------------------
         document.getElementById('btn-signup').addEventListener('click', async () => {
             const email = document.getElementById('signup-email').value;
@@ -264,17 +277,25 @@
             setLoading('btn-signup', true, '');
             
             try {
+                // 1. ساخت اکانت
                 const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
                 const user = userCredential.user;
 
+                // 2. ارسال ایمیل تاییدیه
                 await sendEmailVerification(user);
 
-                showAlert('✅ ثبت‌نام موفق! لینک تایید به ایمیل شما ارسال شد. شما به طور خودکار به داشبورد هدایت خواهید شد.', 'success');
+                // 3. **خروج کاربر تازه ثبت‌نام کرده:** // چون Firebase پس از ثبت‌نام به طور خودکار لاگین می‌کند، برای جلوگیری از ورود به داشبورد، باید خروج را اعمال کنیم.
+                await signOut(auth); 
+
+                // 4. نمایش پیام موفقیت و صفحه انتظار
+                showAlert('✅ ثبت‌نام با موفقیت انجام شد! لطفاً ایمیل خود را تایید کنید.', 'success');
+                switchView('wait');
                 
+                // پاکسازی فرم
+                document.getElementById('signup-email').value = '';
                 document.getElementById('signup-password').value = '';
                 document.getElementById('signup-confirm-password').value = '';
 
-                // نیازی به ریدایرکت دستی نیست، onAuthStateChanged هندل می‌کند
             } catch (error) {
                 showAlert(getFriendlyErrorMessage(error));
             } finally {
@@ -283,7 +304,7 @@
         });
 
         // ------------------------------------------
-        // لاجیک ورود (Login)
+        // لاجیک ورود (Login) - **تغییر کلیدی**
         // ------------------------------------------
         document.getElementById('btn-login').addEventListener('click', async () => {
             const email = document.getElementById('login-email').value;
@@ -294,8 +315,23 @@
             setLoading('btn-login', true, '');
 
             try {
-                await signInWithEmailAndPassword(auth, email, pass);
-                // ریدایرکت خودکار به dashboard.html
+                const userCredential = await signInWithEmailAndPassword(auth, email, pass);
+                const user = userCredential.user;
+
+                // بررسی تایید ایمیل هنگام ورود
+                if (!user.emailVerified) {
+                    // اگر ایمیل تایید نشده، کاربر را لاگ اوت کرده و هشدار می‌دهیم
+                    await signOut(auth); 
+                    showAlert('❌ ورود ناموفق. لطفاً ابتدا ایمیل خود را تایید کنید (لینک در اینباکس یا اسپم شماست).', 'error');
+                    
+                    // همچنین می‌توان کاربر را به صفحه انتظار هدایت کرد
+                    // switchView('wait'); 
+                    
+                } else {
+                    // اگر تایید شده، onAuthStateChanged او را به dashboard.html هدایت می‌کند
+                    showAlert('✅ ورود موفقیت‌آمیز. در حال انتقال به داشبورد...', 'success');
+                }
+
             } catch (error) {
                 showAlert(getFriendlyErrorMessage(error));
             } finally {
@@ -304,7 +340,7 @@
         });
 
         // ------------------------------------------
-        // لاجیک بازیابی رمز (Forgot Password)
+        // لاجیک بازیابی رمز (Forgot Password) - (بدون تغییر)
         // ------------------------------------------
         document.getElementById('btn-reset').addEventListener('click', async () => {
             const email = document.getElementById('reset-email').value;
@@ -323,22 +359,36 @@
         });
 
         // ------------------------------------------
-        // پایش وضعیت کاربر و ریدایرکت
+        // پایش وضعیت کاربر و ریدایرکت - **تغییر کلیدی**
         // ------------------------------------------
         onAuthStateChanged(auth, (user) => {
+            // این تابع در هر بار بارگذاری صفحه یا تغییر وضعیت ورود اجرا می‌شود
             if (user) {
-                // اگر کاربر لاگین است، به dashboard.html هدایت شود
-                window.location.href = 'dashborud.html';
-            } else {
-                // اگر کاربر لاگین نیست، مطمئن شویم در صفحه لاگین هستیم
-                // این برای زمانی است که کاربر از dashboard.html با signOut خارج شده
-                // و مرورگر او را به index.html برگردانده است.
-                if (window.location.pathname.endsWith('dashborud.html')) {
-                   // اگر به صورت دستی آدرس dashboard.html را وارد کرده و لاگین نبوده، به صفحه اصلی برگردد.
-                   window.location.href = 'index.html'; 
+                // اگر کاربر لاگین است، بررسی می‌کنیم که ایمیلش تایید شده باشد
+                if (user.emailVerified) {
+                    // اگر ایمیل تایید شده، به داشبورد هدایت شود.
+                    console.log("User Verified. Redirecting to dashboard.");
+                    window.location.href = 'dashborud.html';
                 } else {
-                    // نمایش ویو ورود در حالت عادی (پس از بارگذاری صفحه)
-                    window.switchView('login');
+                    // اگر کاربر لاگین است اما ایمیل تایید نشده، در همین صفحه لاگین/ثبت‌نام می‌ماند.
+                    // (به شرطی که در تابع signup او را لاگ اوت کرده باشیم)
+                    console.log("User logged in but not verified. Staying on login page.");
+                    // در این حالت اگر کاربر لاگین بماند، برای جلوگیری از لوپ شدن، کاری نمی‌کنیم
+                    // و اجازه می‌دهیم کاربر برای تایید ایمیل به اینباکسش برود.
+                }
+
+            } else {
+                // کاربر لاگین نیست.
+                // اگر در صفحه داشبورد بود، به صفحه ورود برمی‌گردد.
+                if (window.location.pathname.endsWith('dashborud.html')) {
+                    window.location.href = 'index.html'; 
+                } else {
+                    // نمایش ویو ورود در حالت عادی
+                    // این خط تضمین می‌کند که صفحه در حالت اولیه درست نمایش داده شود مگر اینکه در ویو انتظار باشد.
+                    if (!document.body.classList.contains('auth-check-done')) {
+                        window.switchView('login');
+                        document.body.classList.add('auth-check-done');
+                    }
                 }
             }
         });
