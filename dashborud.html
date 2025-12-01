@@ -264,8 +264,11 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // تعریف کلیدهای پیش‌فرض برای پروژه جدید (شامل R11)
-        const DEFAULT_NODE_KEYS = ['R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8', 'R9', 'R10', 'R11'];
+        // 🌟🌟🌟 تعریف نهایی کلیدهای پیش‌فرض: R1 تا R20 🌟🌟🌟
+        const DEFAULT_NODE_KEYS = [
+            'R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8', 'R9', 'R10', 
+            'R11', 'R12', 'R13', 'R14', 'R15', 'R16', 'R17', 'R18', 'R19', 'R20'
+        ];
 
         // متغیرهای گلوبال
         let signaturePad;
@@ -288,12 +291,12 @@
                 document.getElementById('user-email').innerText = user.email;
                 loadUserProjects(user.uid);
             } else {
-                window.location.href = 'auth.html';
+                window.location.href = 'login.html';
             }
         });
 
         document.getElementById('btn-logout').addEventListener('click', () => {
-            signOut(auth).then(() => window.location.href = 'auth.html');
+            signOut(auth).then(() => window.location.href = 'login.html');
         });
 
         // ---------------------------------------------
@@ -325,11 +328,11 @@
                     textClass = "text-red-600 font-bold";
                     icon = `<div class="w-3 h-3 bg-red-500 rounded-full"></div>`;
                     description = "سرویس قطع یا غیرفعال است";
-                } else if (value === "20") { // مقدار پیش‌فرض جدید
+                } else if (value === "20") { // مقدار پیش‌فرض جدید و حالت خنثی
                     statusClass = "border-gray-300";
                     textClass = "text-gray-600 font-bold";
                     icon = `<div class="w-3 h-3 bg-yellow-400 rounded-full"></div>`;
-                    description = "مقدار پیش‌فرض (20)";
+                    description = "RS";
                 } 
 
                 const div = document.createElement('div');
@@ -435,7 +438,7 @@
 
             try {
                 const defaultNodes = {};
-                // 🌟🌟🌟 تعریف نودهای پیش‌فرض با مقدار '20' 🌟🌟🌟
+                // تعریف نودهای پیش‌فرض با مقدار '20' (R1 تا R20)
                 DEFAULT_NODE_KEYS.forEach(key => {
                     defaultNodes[key] = "20"; 
                 });
