@@ -3,15 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ورود به سیستم | راسان دیزاین</title>
+    <title>ورود | ثبت‌نام</title>
     
-    <!-- فونت وزیرمتن -->
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
     
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- تنظیمات فونت و استایل‌های سفارشی -->
     <style>
         body {
             font-family: 'Vazirmatn', sans-serif;
@@ -35,8 +32,9 @@
         /* مخفی کردن المان‌ها با انیمیشن */
         .hidden-section {
             opacity: 0;
-            pointer-events: none; /* جلوگیری از کلیک در حین محو شدن */
+            pointer-events: none;
             transition: opacity 0.5s ease-in-out;
+            /* برای انیمیشن خروج، دیباگ نشود تا انیمیشن اجرا شود */
         }
         .visible-section {
             display: block;
@@ -63,10 +61,8 @@
 </head>
 <body class="min-h-screen flex items-center justify-center p-4">
 
-    <!-- کانتینر اصلی -->
     <div class="glass w-full max-w-md rounded-2xl p-8 relative overflow-hidden">
         
-        <!-- هدر لوگو -->
         <div class="text-center mb-8">
             <div class="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/50">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -77,10 +73,8 @@
             <p id="sub-title" class="text-gray-500 text-sm mt-2">لطفاً وارد حساب کاربری خود شوید</p>
         </div>
 
-        <!-- باکس پیام خطا/موفقیت -->
         <div id="alert-box" class="hidden mb-4 p-3 rounded-lg text-sm text-center"></div>
 
-        <!-- فرم ورود -->
         <div id="login-form" class="visible-section space-y-4">
             <div>
                 <label class="block text-gray-700 text-sm font-bold mb-2">ایمیل</label>
@@ -101,7 +95,6 @@
             </div>
         </div>
 
-        <!-- فرم ثبت نام -->
         <div id="signup-form" class="hidden-section space-y-4" style="display: none;">
             <div>
                 <label class="block text-gray-700 text-sm font-bold mb-2">ایمیل</label>
@@ -123,7 +116,6 @@
             </div>
         </div>
 
-        <!-- فرم بازیابی رمز -->
         <div id="reset-form" class="hidden-section space-y-4" style="display: none;">
             <p class="text-sm text-gray-600 text-center mb-4">ایمیل خود را وارد کنید تا لینک بازیابی رمز عبور برای شما ارسال شود.</p>
             <div>
@@ -140,30 +132,8 @@
                 </button>
             </div>
         </div>
-
-        <!-- صفحه داشبورد موقت (نمایش بعد از ورود) -->
-        <div id="user-dashboard" class="hidden-section text-center space-y-6" style="display: none;">
-            <div class="bg-green-100 text-green-700 p-4 rounded-lg">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <h3 class="font-bold text-lg">خوش آمدید!</h3>
-                <p id="user-email-display" class="text-sm mt-1 dir-ltr"></p>
-            </div>
-            
-            <div id="verification-warning" class="hidden bg-yellow-50 text-yellow-800 p-3 rounded text-sm border border-yellow-200">
-                ایمیل شما هنوز تایید نشده است. لطفاً صندوق ورودی خود را چک کنید.
-                <button id="btn-resend-verify" class="block mt-2 text-blue-600 underline text-xs mx-auto">ارسال مجدد لینک تایید</button>
-            </div>
-
-            <button id="btn-logout" class="w-full border border-red-500 text-red-500 hover:bg-red-50 font-bold py-2 rounded-lg transition">
-                خروج از حساب
-            </button>
-        </div>
-
     </div>
 
-    <!-- اسکریپت‌ها -->
     <script type="module">
         // ایمپورت ماژولار فایربیس
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
@@ -172,7 +142,6 @@
             createUserWithEmailAndPassword, 
             signInWithEmailAndPassword, 
             onAuthStateChanged, 
-            signOut,
             sendEmailVerification,
             sendPasswordResetEmail
         } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
@@ -196,27 +165,23 @@
         const views = {
             login: document.getElementById('login-form'),
             signup: document.getElementById('signup-form'),
-            reset: document.getElementById('reset-form'),
-            dashboard: document.getElementById('user-dashboard')
+            reset: document.getElementById('reset-form')
         };
         const alertBox = document.getElementById('alert-box');
         const mainTitle = document.getElementById('main-title');
         const subTitle = document.getElementById('sub-title');
 
-        // تابع تغییر ویو (صفحات) - اصلاح شده برای جلوگیری از ناپدید شدن
+        // تابع تغییر ویو (صفحات) - بدون داشبورد
         window.switchView = (viewName) => {
             hideAlert();
-            const target = views[viewName]; // ویوی هدف را مشخص می‌کنیم
+            const target = views[viewName]; 
 
             Object.values(views).forEach(el => {
-                // اگر این ویو همان ویوی هدف است، آن را مخفی نکن!
                 if (el === target) return;
 
                 el.classList.remove('visible-section');
                 el.classList.add('hidden-section');
                 
-                // فقط در صورتی display:none کن که هنوز کلاس مخفی دارد
-                // این کار باعث می‌شود اگر کاربر سریع بین صفحات جابجا شد، تداخل پیش نیاید
                 setTimeout(() => {
                     if (el.classList.contains('hidden-section')) {
                         el.style.display = 'none';
@@ -224,10 +189,8 @@
                 }, 500); 
             });
 
-            // نمایش ویوی هدف
             target.style.display = 'block';
             
-            // یک تاخیر بسیار کوتاه برای اعمال انیمیشن
             setTimeout(() => {
                 target.classList.remove('hidden-section');
                 target.classList.add('visible-section');
@@ -243,9 +206,6 @@
             } else if (viewName === 'reset') {
                 mainTitle.innerText = "بازیابی رمز";
                 subTitle.innerText = "رمز عبور خود را فراموش کرده‌اید؟";
-            } else {
-                mainTitle.innerText = "پنل کاربری";
-                subTitle.innerText = "";
             }
         };
 
@@ -262,7 +222,7 @@
 
         // دیکشنری خطاهای فارسی
         function getFriendlyErrorMessage(error) {
-            console.error(error); // برای دیباگ
+            console.error(error); 
             switch (error.code) {
                 case 'auth/email-already-in-use': return '⛔ این ایمیل قبلاً ثبت شده است.';
                 case 'auth/invalid-email': return '⚠️ فرمت ایمیل اشتباه است.';
@@ -304,20 +264,17 @@
             setLoading('btn-signup', true, '');
             
             try {
-                // 1. ساخت اکانت
                 const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
                 const user = userCredential.user;
 
-                // 2. ارسال ایمیل تاییدیه (نیتیو فایربیس)
                 await sendEmailVerification(user);
 
-                showAlert('✅ ثبت‌نام موفق! لینک تایید به ایمیل شما ارسال شد. لطفاً اینباکس و اسپم را چک کنید.', 'success');
+                showAlert('✅ ثبت‌نام موفق! لینک تایید به ایمیل شما ارسال شد. شما به طور خودکار به داشبورد هدایت خواهید شد.', 'success');
                 
-                // پاکسازی فرم
                 document.getElementById('signup-password').value = '';
                 document.getElementById('signup-confirm-password').value = '';
 
-                // به صفحه داشبورد هدایت میشه توسط لیسنر authStateChanged
+                // نیازی به ریدایرکت دستی نیست، onAuthStateChanged هندل می‌کند
             } catch (error) {
                 showAlert(getFriendlyErrorMessage(error));
             } finally {
@@ -338,7 +295,7 @@
 
             try {
                 await signInWithEmailAndPassword(auth, email, pass);
-                // ریدایرکت خودکار انجام میشه
+                // ریدایرکت خودکار به dashboard.html
             } catch (error) {
                 showAlert(getFriendlyErrorMessage(error));
             } finally {
@@ -366,44 +323,23 @@
         });
 
         // ------------------------------------------
-        // لاجیک خروج (Logout)
-        // ------------------------------------------
-        document.getElementById('btn-logout').addEventListener('click', () => {
-            signOut(auth).then(() => {
-                showAlert('با موفقیت خارج شدید.', 'success');
-            });
-        });
-
-        document.getElementById('btn-resend-verify').addEventListener('click', async () => {
-             const user = auth.currentUser;
-             if(user) {
-                 await sendEmailVerification(user);
-                 alert('لینک جدید ارسال شد.');
-             }
-        });
-
-        // ------------------------------------------
-        // پایش وضعیت کاربر (Auth Listener)
+        // پایش وضعیت کاربر و ریدایرکت
         // ------------------------------------------
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                // کاربر لاگین است
-                console.log("User Logged In:", user.email);
-                
-                // پر کردن اطلاعات داشبورد
-                document.getElementById('user-email-display').innerText = user.email;
-                
-                // بررسی تایید ایمیل
-                if (!user.emailVerified) {
-                    document.getElementById('verification-warning').classList.remove('hidden');
-                } else {
-                    document.getElementById('verification-warning').classList.add('hidden');
-                }
-
-                switchView('dashboard');
+                // اگر کاربر لاگین است، به dashboard.html هدایت شود
+                window.location.href = 'dashborud.html';
             } else {
-                // کاربر لاگین نیست
-                switchView('login');
+                // اگر کاربر لاگین نیست، مطمئن شویم در صفحه لاگین هستیم
+                // این برای زمانی است که کاربر از dashboard.html با signOut خارج شده
+                // و مرورگر او را به index.html برگردانده است.
+                if (window.location.pathname.endsWith('dashborud.html')) {
+                   // اگر به صورت دستی آدرس dashboard.html را وارد کرده و لاگین نبوده، به صفحه اصلی برگردد.
+                   window.location.href = 'index.html'; 
+                } else {
+                    // نمایش ویو ورود در حالت عادی (پس از بارگذاری صفحه)
+                    window.switchView('login');
+                }
             }
         });
 
