@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+  <meta charset="UTF-8" />
+  <title>پنل مدیریت متن‌ها</title>
+</head>
+<body>
+  <h2>ویرایش متن‌های صفحه اصلی</h2>
+
+  <label>عنوان سایت:</label><br/>
+  <textarea id="titleInput" rows="2" cols="50"></textarea><br/><br/>
+
+  <label>توضیحات سایت:</label><br/>
+  <textarea id="descInput" rows="5" cols="50"></textarea><br/><br/>
+
+  <button id="saveBtn">ذخیره</button>
+
+  <p><a href="index.html">بازگشت به صفحه اصلی</a></p>
+
+  <script>
+    // بارگذاری متن‌های ذخیره شده داخل textarea
+    document.getElementById('titleInput').value = localStorage.getItem('site_title') || '';
+    document.getElementById('descInput').value = localStorage.getItem('site_description') || '';
+
+    document.getElementById('saveBtn').addEventListener('click', () => {
+      const title = document.getElementById('titleInput').value;
+      const desc = document.getElementById('descInput').value;
+
+      localStorage.setItem('site_title', title);
+      localStorage.setItem('site_description', desc);
+
+      alert('متن‌ها ذخیره شدند!');
+
+      // اگر خواستی بلافاصله به صفحه اصلی برگردی:
+      // window.location.href = 'index.html';
+    });
+  </script>
+</body>
+</html>

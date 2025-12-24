@@ -1,0 +1,614 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>پنل معلم - آموزشگاه زبان</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
+<style>
+    /* (CSS styles are exactly the same as admin.html to maintain consistency) */
+    /* -------------------- BASE -------------------- */
+body {
+  margin: 0;
+  padding: 0;
+  background: #0d1117;
+  font-family: "Vazirmatn", sans-serif;
+  color: #e6edf3;
+}
+
+h1, h2, h3, h4 {
+  margin: 0 0 10px;
+  font-weight: 700;
+}
+
+input, select, textarea, button {
+  font-family: inherit;
+}
+
+small, .small {
+  font-size: 13px;
+  opacity: .8;
+}
+
+/* -------------------- HEADER -------------------- */
+header {
+  background: #161b22;
+  padding: 16px;
+  border-bottom: 1px solid #30363d;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+header h1 {
+  font-size: 22px;
+  font-weight: 800;
+}
+
+/* -------------------- LAYOUT -------------------- */
+.wrap {
+  display: flex;
+  height: calc(100vh - 70px);
+}
+
+/* -------------------- SIDEBAR -------------------- */
+nav {
+  width: 240px;
+  background: #161b22;
+  border-left: 1px solid #30363d;
+  padding: 14px;
+  overflow-y: auto;
+}
+
+nav button {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 6px;
+  background: #21262d;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  transition: .15s;
+}
+
+nav button:hover {
+  background: #30363d;
+}
+
+nav button.active {
+  background: #238636;
+  border-color: #2ea043;
+}
+
+/* -------------------- MAIN -------------------- */
+main {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+/* -------------------- CARDS -------------------- */
+.card {
+  background: #161b22;
+  padding: 16px;
+  border: 1px solid #30363d;
+  border-radius: 10px;
+  margin-bottom: 12px;
+}
+
+/* -------------------- INPUTS -------------------- */
+label {
+  margin-bottom: 4px;
+  display: block;
+  font-weight: 600;
+}
+
+input, select, textarea {
+  width: 100%;
+  padding: 8px 10px;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  color: #e6edf3;
+  outline: none;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: #2ea043;
+  box-shadow: 0 0 0 2px rgba(46, 160, 67, .3);
+}
+
+/* -------------------- BUTTONS -------------------- */
+button {
+  padding: 10px 16px;
+  background: #238636;
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: .15s;
+}
+
+button:hover {
+  background: #2ea043;
+}
+
+button:active {
+  transform: scale(.95);
+}
+
+/* Danger button */
+button.danger {
+  background: #da3633;
+}
+button.danger:hover {
+  background: #f85149;
+}
+
+/* -------------------- GRID SYSTEM -------------------- */
+.row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.col {
+  flex: 1;
+  min-width: 200px;
+}
+
+/* -------------------- RIGHT PANEL -------------------- */
+.right-panel {
+  width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* -------------------- TABLE STYLES -------------------- */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #0d1117;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+table th, table td {
+  border: 1px solid #30363d;
+  padding: 8px;
+  text-align: center;
+}
+
+table th {
+  background: #161b22;
+  font-weight: 600;
+}
+
+table tr:nth-child(even) {
+  background: #161b22;
+}
+
+table tr:hover {
+  background: #21262d;
+}
+
+@media (max-width: 768px) {
+  .wrap {
+    flex-direction: column;
+    height: auto;
+  }
+  nav {
+    width: 100%;
+    border-left: none;
+    border-bottom: 1px solid #30363d;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  nav button {
+    flex: 1;
+    min-width: 120px;
+    margin-bottom: 0;
+  }
+  main {
+    padding: 10px;
+  }
+}
+</style>
+
+</head>
+<body>
+
+    <header>
+        <h1>پنل معلم</h1>
+    </header>
+
+    <div class="wrap">
+        <nav id="nav-bar">
+            <button onclick="document.location.reload()" class="active">کلاس‌های من</button>
+            <button onclick="document.getElementById('content').innerHTML = document.getElementById('teacher-search').outerHTML; $('search-show').addEventListener('click', showStudentFromSearch);">جستجوی زبان‌آموز</button>
+        </nav>
+
+        <main id="content">
+            <div id="class-view">
+                <h2>مدیریت کلاس‌های من</h2>
+                
+                <div class="row">
+                    <div class="col"><label>انتخاب کلاس</label><select id="class-select"><option value="">انتخاب کنید</option></select></div>
+                    <div class="col"><label>تاریخ جلسه</label><input id="class-date" type="date" value="2025-12-06" /></div>
+                    <div class="col" style="flex-grow:0;"><label style="opacity:0;">.</label><button id="class-load">نمایش/ثبت حضور</button></div>
+                </div>
+
+                <hr style="border:none;border-top:1px solid rgba(255,255,255,.1);margin: 15px 0;">
+
+                <div id="class-details" class="card" style="display:none;">
+                    <h3 id="class-info"></h3>
+                    <div id="attendance-table-container"></div>
+                    <h4 style="margin-top: 20px;">ثبت نمره پایان ترم</h4>
+                    <div class="row">
+                        <div class="col"><label>زبان‌آموز</label><select id="grade-student-select"><option value="">انتخاب کنید</option></select></div>
+                        <div class="col"><label>نمره</label><input id="grade-input" placeholder="مثلاً: A، B+، 18،..." /></div>
+                        <div class="col" style="flex-grow:0;"><label style="opacity:0;">.</label><button id="grade-save">ثبت نمره</button></div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div id="teacher-search" style="display:none;">
+                <h2>جستجوی وضعیت زبان‌آموز</h2>
+                <p>وضعیت حضور و غیاب، نمرات و سوابق مالی/کتاب زبان‌آموز را با کد ملی مشاهده کنید.</p>
+                <div class="row">
+                    <div class="col" style="flex-grow:3;"><label>کد ملی زبان‌آموز</label><input id="search-nid" placeholder="مثلاً: 1234567890" /></div>
+                    <div class="col" style="flex-grow:1;margin-top:8px"><button id="search-show">نمایش وضعیت</button></div>
+                </div>
+                <hr style="border:none;border-top:1px solid rgba(255,255,255,.1);margin: 10px 0;">
+                <div id="search-output"></div>
+            </div>
+
+        </main>
+    </div>
+
+<script>
+    // ==========================================
+    // CONFIG & ROLE
+    // ==========================================
+    const currentRole = 'teacher'; // Hardcoded role
+    const TEACHER_NID = '9876543210'; // ! Replace with the actual NID of the logged-in teacher !
+
+    const FIREBASE_CONFIG = {
+        apiKey: "YOUR_API_KEY", // Replace with your actual Firebase config
+        authDomain: "YOUR_AUTH_DOMAIN",
+        projectId: "YOUR_PROJECT_ID",
+        storageBucket: "YOUR_STORAGE_BUCKET",
+        messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+        appId: "YOUR_APP_ID"
+    };
+
+    if (!firebase.apps.length) {
+        firebase.initializeApp(FIREBASE_CONFIG);
+    }
+    const db = firebase.firestore();
+    const $ = id => document.getElementById(id);
+
+    // ==========================================
+    // CACHES
+    // ==========================================
+    let classesCache = [];
+    let studentsCache = [];
+    let teachersCache = [];
+    let attendanceCache = {};
+
+    // ==========================================
+    // FIREBASE UTILITY FUNCTIONS
+    // ==========================================
+    async function fetchData(docName, defaultValue) {
+        return db.collection('data').doc(docName).get().then(doc => {
+            return doc.exists ? doc.data().data || defaultValue : defaultValue;
+        });
+    }
+
+    async function saveData(docName, data) {
+        try {
+            await db.collection('data').doc(docName).set({ data: data });
+            console.log(docName + " data saved successfully.");
+        } catch (error) {
+            console.error("Error saving " + docName + ": ", error);
+            alert("خطا در ذخیره سازی " + docName + ": " + error.message);
+        }
+    }
+
+    async function saveAllData() {
+        const batch = db.batch();
+        batch.set(db.collection('data').doc('classes'), { data: classesCache });
+        batch.set(db.collection('data').doc('students'), { data: studentsCache });
+        batch.set(db.collection('data').doc('attendance'), { data: attendanceCache });
+
+        try {
+            await batch.commit();
+            console.log("Teacher-specific data saved successfully (Batch).");
+        } catch (error) {
+            console.error("Error saving data (Batch): ", error);
+            alert("خطا در ذخیره سازی داده‌ها: " + error.message);
+        }
+    }
+
+    // ==========================================
+    // DATA HELPERS
+    // ==========================================
+    function getStudentEntryByNid(nid) {
+        return studentsCache.filter(s => s.nid === nid);
+    }
+
+    // ==========================================
+    // UI HELPERS
+    // ==========================================
+    function populateClassSelect(classes) {
+        const select = $('class-select');
+        if (!select) return;
+        select.innerHTML = '<option value="">انتخاب کلاس</option>';
+        classes.forEach(c => {
+            const option = document.createElement('option');
+            option.value = c.id;
+            option.textContent = c.name + ' (' + c.book + ')';
+            select.appendChild(option);
+        });
+    }
+    
+    function populateGradeStudentSelect(classId) {
+        const select = $('grade-student-select');
+        if (!select) return;
+        select.innerHTML = '<option value="">انتخاب زبان‌آموز</option>';
+
+        studentsCache.filter(s => s.classId === classId).forEach(s => {
+            const option = document.createElement('option');
+            option.value = s.nid;
+            option.textContent = s.name + ' (' + s.nid + ')';
+            select.appendChild(option);
+        });
+    }
+
+    // ==========================================
+    // ATTENDANCE & GRADING
+    // ==========================================
+    function handleCheckboxChange(nid, termIndex, checkbox) {
+        return async function() {
+            const classId = $('class-select').value;
+            const key = classId + '_' + nid;
+            
+            // Ensure array exists and is long enough
+            attendanceCache[key] = attendanceCache[key] || [];
+            while (attendanceCache[key].length <= termIndex) {
+                attendanceCache[key].push(null);
+            }
+
+            // Update value: true for Present, false for Absent, null for Not taken
+            attendanceCache[key][termIndex] = checkbox.checked ? true : false; 
+            
+            await saveAllData();
+            // Re-render the table to show updated status immediately
+            // This is simple but might be slow for many students, a better way is to update the single cell's style
+            // displayClassAttendance(); 
+            const row = checkbox.closest('tr');
+            if (checkbox.checked) {
+                row.style.background = '#0e4429'; // Greenish background for checked
+            } else {
+                row.style.background = '#490204'; // Reddish background for unchecked
+            }
+        };
+    }
+
+    async function loadClassAttendance() {
+        const classId = $('class-select').value;
+        const date = $('class-date').value;
+        const tableContainer = $('attendance-table-container');
+        const classDetails = $('class-details');
+        if (!classId) {
+            alert('لطفاً یک کلاس را انتخاب کنید.');
+            classDetails.style.display = 'none';
+            return;
+        }
+
+        const selectedClass = classesCache.find(c => c.id === classId);
+        if (!selectedClass) {
+            alert('خطا: کلاس یافت نشد.');
+            classDetails.style.display = 'none';
+            return;
+        }
+
+        // 1. Prepare UI
+        $('class-info').textContent = `کلاس: ${selectedClass.name} | تاریخ جلسه: ${date}`;
+        classDetails.style.display = 'block';
+        tableContainer.innerHTML = '<h4>ثبت حضور و غیاب</h4><table id="attendance-table"><thead><tr><th>زبان‌آموز</th><th>کد ملی</th><th>حضور</th></tr></thead><tbody></tbody></table>';
+        const tbody = $('attendance-table').querySelector('tbody');
+
+        // 2. Prepare Data
+        const classStudents = studentsCache.filter(s => s.classId === classId).sort((a,b) => a.name.localeCompare(b.name));
+        const dates = selectedClass.attendanceDates || [];
+        const termIndex = dates.indexOf(date);
+        
+        // If date is new, add it
+        if (termIndex === -1) {
+            if (dates.length >= 20) {
+                 alert('حداکثر تعداد جلسات (20) برای این کلاس پر شده است.');
+                 classDetails.style.display = 'none';
+                 return;
+            }
+            selectedClass.attendanceDates = dates.concat(date); // Add date to cache for future sessions
+            // We save it when the first attendance is taken. For now, just update the local cache.
+            // Re-fetch the index for the newly added date
+            const newIndex = selectedClass.attendanceDates.indexOf(date); 
+        }
+
+        // 3. Populate Table Rows
+        classStudents.forEach(st => {
+            const key = classId + '_' + st.nid;
+            const termAttendance = attendanceCache[key] || [];
+            const isPresent = termAttendance[termIndex] === true;
+            const isAbsent = termAttendance[termIndex] === false;
+
+            const tr = document.createElement('tr');
+            tr.style.background = isPresent ? '#0e4429' : (isAbsent ? '#490204' : 'inherit');
+
+            tr.innerHTML = `
+                <td>${st.name}</td>
+                <td>${st.nid}</td>
+                <td>
+                    <label style="display:inline-block; margin:0;">حاضر
+                        <input type="checkbox" ${isPresent ? 'checked' : ''} style="width: auto; margin: 0 5px;" id="att-${st.nid}">
+                    </label>
+                </td>
+            `;
+            tbody.appendChild(tr);
+
+            const cb = $(`att-${st.nid}`);
+            if (cb) {
+                cb.addEventListener('change', handleCheckboxChange(st.nid, termIndex, cb));
+            }
+        });
+
+        populateGradeStudentSelect(classId);
+    }
+
+    async function saveGrade() {
+        const classId = $('class-select').value;
+        const nid = $('grade-student-select').value;
+        const grade = $('grade-input').value.trim();
+        if (!classId || !nid || !grade) { alert('لطفاً کلاس، زبان‌آموز و نمره را وارد کنید.'); return; }
+
+        const entry = studentsCache.find(s => s.nid === nid && s.classId === classId);
+        if (!entry) { alert('خطا: زبان‌آموز در این کلاس یافت نشد.'); return; }
+
+        const classInfo = classesCache.find(c => c.id === classId);
+        const termName = `Term ${classesCache.indexOf(classInfo) + 1}`;
+        
+        entry.grades = entry.grades || {};
+        entry.grades[termName] = grade;
+
+        await saveAllData();
+        alert(`نمره ${grade} برای ${entry.name} در ${termName} با موفقیت ثبت شد.`);
+        $('grade-input').value = '';
+    }
+
+    // ==========================================
+    // STUDENT SEARCH (VIEW STATUS) - Shared with Admin
+    // ==========================================
+    function showStudentStatus(studentEntries) {
+        const out = $('search-output');
+        if (!out) return;
+        out.innerHTML = '';
+        if (studentEntries.length === 0) { out.innerHTML = '<div class="card" style="color:#f85149;">خطا: زبان‌آموز با این کد ملی یافت نشد.</div>'; return; }
+
+        const st = studentEntries[0]; 
+        out.appendChild(document.createElement('h3')).textContent = 'وضعیت زبان‌آموز: ' + st.name + ' (' + st.nid + ')';
+        out.appendChild(document.createElement('p')).innerHTML = '<strong>شماره تماس:</strong> ' + (st.phone || 'ثبت نشده');
+
+        out.appendChild(document.createElement('h4')).textContent = 'وضعیت کلاس‌ها و حضور و غیاب';
+        const classTable = document.createElement('table');
+        classTable.innerHTML = '<thead><tr><th>نام کلاس</th><th>معلم</th><th>وضعیت کلی حضور</th><th>آخرین نمره</th></tr></thead><tbody>';
+
+        studentEntries.forEach(entry => {
+            const classInfo = classesCache.find(c => c.id === entry.classId);
+            const teacherName = classInfo?.teacher || 'نامشخص';
+
+            const attendanceKey = entry.classId + '_' + entry.nid;
+            const termAttendance = attendanceCache[attendanceKey] || [];
+            const present = termAttendance.filter(v => v === true).length;
+            const absent = termAttendance.filter(v => v === false).length;
+            const remaining = termAttendance.filter(v => v === null).length;
+            const attendanceSummary = `${present} حضور / ${absent} غیبت / ${remaining} مانده`;
+
+            const grades = entry.grades || {};
+            const curTerm = `Term ${classesCache.indexOf(classInfo) + 1}`;
+            const gradeCur = grades[curTerm] !== undefined ? grades[curTerm] : 'ثبت نشده';
+
+            classTable.innerHTML += `<tr>
+                <td>${entry.className}</td>
+                <td>${teacherName}</td>
+                <td>${attendanceSummary}</td>
+                <td>${gradeCur}</td>
+            </tr>`;
+        });
+        out.appendChild(classTable);
+
+        out.appendChild(document.createElement('h4')).textContent = 'کتاب‌های گذرانده شده (تاریخچه کل)';
+        if (st.books && st.books.length > 0) {
+            const bookList = document.createElement('ul');
+            st.books.forEach(b => {
+                const li = document.createElement('li');
+                li.textContent = `${b.name} (تاریخ اتمام: ${b.date})`;
+                bookList.appendChild(li);
+            });
+            out.appendChild(bookList);
+        } else {
+            out.appendChild(document.createElement('p')).textContent = 'سابقه کتابی ثبت نشده است.';
+        }
+    }
+
+    async function showStudentFromSearch() {
+        const nid = $('search-nid').value.trim();
+        if (!nid) { alert('لطفاً کد ملی را وارد کنید.'); return; }
+        const studentEntries = getStudentEntryByNid(nid);
+        showStudentStatus(studentEntries);
+    }
+
+    // ==========================================
+    // INITIAL LOAD FUNCTION (MODIFIED)
+    // ==========================================
+    async function initialLoadTeacher() {
+        try {
+            const [classes, students, attendance] = await Promise.all([
+                fetchData('classes', []),
+                fetchData('students', []),
+                fetchData('attendance', {})
+            ]);
+
+            // Filter classes: only show classes assigned to this teacher
+            const teacherClasses = classes.filter(c => c.teacherNid === TEACHER_NID);
+            
+            if (teacherClasses.length === 0) {
+                alert("شما کلاسی جهت مدیریت ندارید. لطفاً با مدیر تماس بگیرید.");
+                $('class-view').innerHTML = '<h2>کلاسی یافت نشد.</h2><p>لطفاً کد ملی خود را در کد JS این صفحه (متغیر TEACHER_NID) وارد کنید.</p>';
+                return;
+            }
+
+            classesCache = teacherClasses;
+            studentsCache = students;
+            attendanceCache = attendance;
+
+            populateClassSelect(teacherClasses);
+
+            // Setup Event Listeners
+            $('class-load').addEventListener('click', loadClassAttendance);
+            $('grade-save').addEventListener('click', saveGrade);
+
+            // This listener must be re-added if the search tab is clicked
+            const teacherSearchButton = document.querySelector('nav button:nth-child(2)');
+            if(teacherSearchButton) {
+                 teacherSearchButton.addEventListener('click', () => {
+                     // Ensure event listener is re-attached after content is loaded
+                     setTimeout(() => {
+                         const searchShowButton = $('search-show');
+                         if(searchShowButton) searchShowButton.addEventListener('click', showStudentFromSearch);
+                     }, 100);
+                 });
+            }
+
+
+        } catch (error) {
+            console.error("Initialization failed: ", error);
+            alert("خطا در بارگذاری اولیه اطلاعات: " + error.message);
+        }
+    }
+
+    window.onload = initialLoadTeacher;
+</script>
+
+</body>
+</html>

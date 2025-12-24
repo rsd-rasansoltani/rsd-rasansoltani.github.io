@@ -1,0 +1,954 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>پنل مدیر - آموزشگاه زبان</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
+<style>
+    /* -------------------- BASE -------------------- */
+body {
+  margin: 0;
+  padding: 0;
+  background: #0d1117;
+  font-family: "Vazirmatn", sans-serif;
+  color: #e6edf3;
+}
+
+h1, h2, h3, h4 {
+  margin: 0 0 10px;
+  font-weight: 700;
+}
+
+input, select, textarea, button {
+  font-family: inherit;
+}
+
+small, .small {
+  font-size: 13px;
+  opacity: .8;
+}
+
+/* -------------------- HEADER -------------------- */
+header {
+  background: #161b22;
+  padding: 16px;
+  border-bottom: 1px solid #30363d;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+header h1 {
+  font-size: 22px;
+  font-weight: 800;
+}
+
+/* -------------------- LAYOUT -------------------- */
+.wrap {
+  display: flex;
+  height: calc(100vh - 70px);
+}
+
+/* -------------------- SIDEBAR -------------------- */
+nav {
+  width: 240px;
+  background: #161b22;
+  border-left: 1px solid #30363d;
+  padding: 14px;
+  overflow-y: auto;
+}
+
+nav button {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 6px;
+  background: #21262d;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  transition: .15s;
+}
+
+nav button:hover {
+  background: #30363d;
+}
+
+nav button.active {
+  background: #238636;
+  border-color: #2ea043;
+}
+
+/* -------------------- MAIN -------------------- */
+main {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+/* -------------------- CARDS -------------------- */
+.card {
+  background: #161b22;
+  padding: 16px;
+  border: 1px solid #30363d;
+  border-radius: 10px;
+  margin-bottom: 12px;
+}
+
+/* -------------------- INPUTS -------------------- */
+label {
+  margin-bottom: 4px;
+  display: block;
+  font-weight: 600;
+}
+
+input, select, textarea {
+  width: 100%;
+  padding: 8px 10px;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  color: #e6edf3;
+  outline: none;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: #2ea043;
+  box-shadow: 0 0 0 2px rgba(46, 160, 67, .3);
+}
+
+/* -------------------- BUTTONS -------------------- */
+button {
+  padding: 10px 16px;
+  background: #238636;
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: .15s;
+}
+
+button:hover {
+  background: #2ea043;
+}
+
+button:active {
+  transform: scale(.95);
+}
+
+/* Danger button */
+button.danger {
+  background: #da3633;
+}
+button.danger:hover {
+  background: #f85149;
+}
+
+/* -------------------- GRID SYSTEM -------------------- */
+.row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.col {
+  flex: 1;
+  min-width: 200px;
+}
+
+/* -------------------- RIGHT PANEL -------------------- */
+.right-panel {
+  width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* -------------------- TABLE STYLES -------------------- */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #0d1117;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+table th, table td {
+  border: 1px solid #30363d;
+  padding: 8px;
+  text-align: center;
+}
+
+table th {
+  background: #161b22;
+  font-weight: 600;
+}
+
+table tr:nth-child(even) {
+  background: #161b22;
+}
+
+table tr:hover {
+  background: #21262d;
+}
+
+@media (max-width: 768px) {
+  .wrap {
+    flex-direction: column;
+    height: auto;
+  }
+  nav {
+    width: 100%;
+    border-left: none;
+    border-bottom: 1px solid #30363d;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  nav button {
+    flex: 1;
+    min-width: 120px;
+    margin-bottom: 0;
+  }
+  main {
+    padding: 10px;
+  }
+}
+</style>
+
+</head>
+<body>
+
+    <header>
+        <h1>پنل مدیر</h1>
+    </header>
+
+    <div class="wrap">
+        <nav id="nav-bar">
+            <button onclick="document.location.reload()" class="active">داشبورد</button>
+            <button onclick="document.getElementById('content').innerHTML = document.getElementById('class-management').outerHTML; populateSelects()">مدیریت کلاس‌ها</button>
+            <button onclick="document.getElementById('content').innerHTML = document.getElementById('student-management').outerHTML; populateSelects()">مدیریت زبان‌آموزان</button>
+            <button onclick="document.getElementById('content').innerHTML = document.getElementById('teacher-management').outerHTML">مدیریت معلمین</button>
+            <button onclick="document.getElementById('content').innerHTML = document.getElementById('announcement-management').outerHTML; loadAnnouncements()">اطلاعیه‌ها</button>
+        </nav>
+
+        <main id="content">
+            <div id="admin-dashboard">
+                <h2>داشبورد مدیریتی</h2>
+                <div class="row">
+                    <div class="col card">
+                        <h3>آمار کلی</h3>
+                        <p>تعداد کلاس‌ها: <span id="stat-classes">...</span></p>
+                        <p>تعداد دانش‌آموزان: <span id="stat-students">...</span></p>
+                        <p>تعداد معلمین: <span id="stat-teachers">...</span></p>
+                    </div>
+                    <div class="col card">
+                        <h3>آخرین اطلاعیه‌ها</h3>
+                        <div id="latest-announcements-admin"></div>
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 20px;">نمایش وضعیت زبان‌آموز (جستجو با کد ملی)</h3>
+                <div class="row">
+                    <div class="col" style="flex-grow:3;"><label>کد ملی زبان‌آموز</label><input id="search-nid" placeholder="مثلاً: 1234567890" /></div>
+                    <div class="col" style="flex-grow:1;margin-top:8px"><button id="search-show">نمایش وضعیت</button></div>
+                </div>
+                <hr style="border:none;border-top:1px solid rgba(255,255,255,.1);margin: 10px 0;">
+                <div id="search-output"></div>
+
+                <h3 style="margin-top: 20px;">گزارش مالی/کتاب‌ها (عمومی)</h3>
+                <div class="row">
+                    <div class="col">
+                        <div class="card">
+                            <h4>ثبت پرداخت شهریه</h4>
+                            <div class="row">
+                                <div class="col"><label>کلاس</label><select id="tuition-class"><option value="">انتخاب کنید</option></select></div>
+                                <div class="col"><label>زبان‌آموز</label><select id="tuition-student-select"><option value="">انتخاب کنید</option></select></div>
+                            </div>
+                            <div class="row" style="margin-top:8px">
+                                <div class="col"><label>مبلغ پرداخت</label><input id="tuition-amount" type="number" placeholder="مثلاً: 500000" /></div>
+                                <div class="col"><label>تاریخ پرداخت</label><input id="tuition-date" type="date" value="2025-12-06" /></div>
+                            </div>
+                            <div class="row" style="margin-top:8px"><button id="tuition-save">ثبت شهریه</button></div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="card">
+                            <h4>ثبت کتاب جدید</h4>
+                            <div class="row">
+                                <div class="col"><label>کلاس</label><select id="book-class-select"><option value="">انتخاب کنید</option></select></div>
+                                <div class="col"><label>زبان‌آموز</label><select id="book-student-select"><option value="">انتخاب کنید</option></select></div>
+                            </div>
+                            <div class="row" style="margin-top:8px">
+                                <div class="col"><label>نام کتاب</label><input id="book-name" placeholder="مثلاً: Top Notch 1A" /></div>
+                                <div class="col"><label>تاریخ اتمام</label><input id="book-date" type="date" value="2025-12-06" /></div>
+                            </div>
+                            <div class="row" style="margin-top:8px"><button id="book-save">ثبت کتاب</button></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="class-management" style="display:none;">
+                <h2>مدیریت کلاس‌ها</h2>
+                <div class="row">
+                    <div class="col card">
+                        <h4>ایجاد کلاس جدید</h4>
+                        <label>نام کلاس</label><input id="class-name" placeholder="مثلاً: Top Notch 1 - شنبه سه‌شنبه" />
+                        <label style="margin-top:8px">معلم</label><select id="class-teacher"><option value="">انتخاب کنید</option></select>
+                        <label style="margin-top:8px">کتاب</label><input id="class-book" placeholder="مثلاً: Top Notch 1" />
+                        <div class="row" style="margin-top:8px"><button id="class-save">افزودن کلاس</button></div>
+                    </div>
+                    <div class="col card">
+                        <h4>حذف کلاس</h4>
+                        <label>انتخاب کلاس</label><select id="class-delete-select"><option value="">انتخاب کنید</option></select>
+                        <small>توجه: با حذف کلاس، سوابق حضور و غیاب دانش‌آموزان این کلاس نیز پاک می‌شود.</small>
+                        <div class="row" style="margin-top:8px"><button id="class-delete" class="danger">حذف کلاس</button></div>
+                    </div>
+                </div>
+                <h3 style="margin-top: 20px;">لیست کلاس‌های موجود</h3>
+                <div id="classes-list-admin"></div>
+            </div>
+
+            <div id="student-management" style="display:none;">
+                <h2>مدیریت زبان‌آموزان</h2>
+                <div class="row">
+                    <div class="col card">
+                        <h4>افزودن/ویرایش زبان‌آموز</h4>
+                        <label>نام و نام خانوادگی</label><input id="student-name" placeholder="مثلاً: علی احمدی" />
+                        <label style="margin-top:8px">کد ملی (ضروری)</label><input id="student-nid" placeholder="مثلاً: 1234567890" />
+                        <label style="margin-top:8px">شماره تماس</label><input id="student-phone" placeholder="مثلاً: 0912xxxxxxx" />
+                        <label style="margin-top:8px">انتخاب کلاس</label><select id="student-class"><option value="">انتخاب کنید</option></select>
+                        <div class="row" style="margin-top:8px"><button id="student-save">ثبت/ویرایش زبان‌آموز</button></div>
+                    </div>
+                    <div class="col card">
+                        <h4>حذف زبان‌آموز از کلاس</h4>
+                        <label>کلاس</label><select id="student-remove-class"><option value="">انتخاب کنید</option></select>
+                        <label style="margin-top:8px">زبان‌آموز</label><select id="student-remove-select"><option value="">انتخاب کنید</option></select>
+                        <small>توجه: با حذف از کلاس، سوابق حضور، شهریه و کتاب‌های زبان‌آموز *در این کلاس* پاک می‌شود.</small>
+                        <div class="row" style="margin-top:8px"><button id="student-remove" class="danger">حذف زبان‌آموز از کلاس</button></div>
+                    </div>
+                </div>
+                <h3 style="margin-top: 20px;">لیست زبان‌آموزان موجود</h3>
+                <div id="students-list-admin"></div>
+            </div>
+
+            <div id="teacher-management" style="display:none;">
+                <h2>مدیریت معلمین</h2>
+                <div class="row">
+                    <div class="col card">
+                        <h4>افزودن معلم جدید</h4>
+                        <label>نام و نام خانوادگی</label><input id="teacher-name" placeholder="مثلاً: سارا کریمی" />
+                        <label style="margin-top:8px">کد ملی (ضروری)</label><input id="teacher-nid" placeholder="مثلاً: 9876543210" />
+                        <label style="margin-top:8px">شماره تماس</label><input id="teacher-phone" placeholder="مثلاً: 0912xxxxxxx" />
+                        <div class="row" style="margin-top:8px"><button id="teacher-save">افزودن معلم</button></div>
+                    </div>
+                    <div class="col card">
+                        <h4>حذف معلم</h4>
+                        <label>انتخاب معلم</label><select id="teacher-delete-select"><option value="">انتخاب کنید</option></select>
+                        <small>توجه: کلاس‌های معلم حذف شده باید مجدداً به معلم دیگری اختصاص یابد.</small>
+                        <div class="row" style="margin-top:8px"><button id="teacher-delete" class="danger">حذف معلم</button></div>
+                    </div>
+                </div>
+                <h3 style="margin-top: 20px;">لیست معلمین موجود</h3>
+                <div id="teachers-list-admin"></div>
+            </div>
+
+            <div id="announcement-management" style="display:none;">
+                <h2>مدیریت اطلاعیه‌ها</h2>
+                <div class="card">
+                    <h4>ایجاد اطلاعیه جدید (مدیر)</h4>
+                    <input id="announcement-title" placeholder="عنوان (مثلاً تعطیلی کلاس)" />
+                    <textarea id="announcement-text" placeholder="متن کامل اطلاعیه..." style="margin-top:8px;height:100px;"></textarea>
+                    <div class="row" style="margin-top:8px"><button id="announcement-save">ثبت اطلاعیه</button></div>
+                </div>
+                <h3 style="margin-top: 20px;">اطلاعیه‌های موجود</h3>
+                <div id="announcements-list-admin"></div>
+            </div>
+
+        </main>
+    </div>
+
+<script>
+    // ==========================================
+    // CONFIG & ROLE
+    // ==========================================
+    const currentRole = 'admin'; // Hardcoded role
+    const FIREBASE_CONFIG = {
+        apiKey: "YOUR_API_KEY", // Replace with your actual Firebase config
+        authDomain: "YOUR_AUTH_DOMAIN",
+        projectId: "YOUR_PROJECT_ID",
+        storageBucket: "YOUR_STORAGE_BUCKET",
+        messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+        appId: "YOUR_APP_ID"
+    };
+
+    if (!firebase.apps.length) {
+        firebase.initializeApp(FIREBASE_CONFIG);
+    }
+    const db = firebase.firestore();
+    const $ = id => document.getElementById(id);
+
+    // ==========================================
+    // CACHES
+    // ==========================================
+    let classesCache = [];
+    let studentsCache = [];
+    let teachersCache = [];
+    let announcementsCache = [];
+    let attendanceCache = {};
+
+    // ==========================================
+    // FIREBASE UTILITY FUNCTIONS
+    // ==========================================
+    async function fetchData(docName, defaultValue) {
+        return db.collection('data').doc(docName).get().then(doc => {
+            return doc.exists ? doc.data().data || defaultValue : defaultValue;
+        });
+    }
+
+    async function saveData(docName, data) {
+        try {
+            await db.collection('data').doc(docName).set({ data: data });
+            console.log(docName + " data saved successfully.");
+        } catch (error) {
+            console.error("Error saving " + docName + ": ", error);
+            alert("خطا در ذخیره سازی " + docName + ": " + error.message);
+        }
+    }
+
+    // Asynchronous Save All Data to Firestore (using batch for atomic update)
+    async function saveAllData() {
+        const batch = db.batch();
+        batch.set(db.collection('data').doc('classes'), { data: classesCache });
+        batch.set(db.collection('data').doc('students'), { data: studentsCache });
+        batch.set(db.collection('data').doc('teachers'), { data: teachersCache });
+        batch.set(db.collection('data').doc('announcements'), { data: announcementsCache });
+        batch.set(db.collection('data').doc('attendance'), { data: attendanceCache });
+
+        try {
+            await batch.commit();
+            console.log("All data saved successfully (Batch).");
+        } catch (error) {
+            console.error("Error saving all data (Batch): ", error);
+            alert("خطا در ذخیره سازی کلی داده‌ها: " + error.message);
+        }
+    }
+
+    // ==========================================
+    // DATA HELPERS
+    // ==========================================
+    function getEntryByNid(nid, cache) {
+        return cache.find(e => e.nid === nid);
+    }
+
+    function getStudentEntryByNid(nid) {
+        return studentsCache.filter(s => s.nid === nid);
+    }
+
+    // ==========================================
+    // UI HELPERS (Populating Selects)
+    // ==========================================
+    function populateSelects() {
+        // Class selects
+        ['class-delete-select', 'student-class', 'student-remove-class', 'tuition-class', 'book-class-select'].forEach(id => {
+            const select = $(id);
+            if (!select) return;
+            select.innerHTML = '<option value="">انتخاب کنید</option>';
+            classesCache.forEach(c => {
+                const option = document.createElement('option');
+                option.value = c.id;
+                option.textContent = c.name;
+                select.appendChild(option);
+            });
+        });
+
+        // Teacher selects
+        ['class-teacher', 'teacher-delete-select'].forEach(id => {
+            const select = $(id);
+            if (!select) return;
+            select.innerHTML = '<option value="">انتخاب کنید</option>';
+            teachersCache.forEach(t => {
+                const option = document.createElement('option');
+                option.value = t.nid;
+                option.textContent = t.name + ' (' + t.nid + ')';
+                select.appendChild(option);
+            });
+        });
+    }
+
+    function populateDependentStudentSelect(classSelectId, studentSelectId) {
+        const classId = $(classSelectId).value;
+        const studentSelect = $(studentSelectId);
+        if (!studentSelect) return;
+        studentSelect.innerHTML = '<option value="">انتخاب کنید</option>';
+
+        if (classId) {
+            studentsCache.filter(s => s.classId === classId).forEach(s => {
+                const option = document.createElement('option');
+                option.value = s.nid;
+                option.textContent = s.name + ' (' + s.nid + ')';
+                studentSelect.appendChild(option);
+            });
+        }
+    }
+
+    // ==========================================
+    // CLASS MANAGEMENT
+    // ==========================================
+    async function saveClass() {
+        const name = $('class-name').value;
+        const teacherNid = $('class-teacher').value;
+        const book = $('class-book').value;
+        if (!name || !teacherNid || !book) { alert('لطفاً همه فیلدها را پر کنید.'); return; }
+        if (classesCache.some(c => c.name === name)) { alert('این کلاس قبلاً اضافه شده است.'); return; }
+
+        classesCache.push({
+            id: 'class-' + Date.now(),
+            name: name,
+            teacher: teachersCache.find(t => t.nid === teacherNid)?.name || 'N/A',
+            teacherNid: teacherNid,
+            book: book,
+            created: new Date().toLocaleDateString('fa-IR')
+        });
+
+        await saveAllData();
+        alert('کلاس با موفقیت اضافه شد. حالا می‌توانید زبان‌آموز اضافه کنید یا به داشبورد بروید.');
+        $('class-name').value = ''; $('class-teacher').value = ''; $('class-book').value = '';
+        displayClassList();
+        populateSelects();
+    }
+
+    async function deleteClass() {
+        const classId = $('class-delete-select').value;
+        if (!classId) { alert('لطفاً یک کلاس را انتخاب کنید.'); return; }
+        if (!confirm('آیا مطمئنید که می‌خواهید این کلاس و تمام سوابق آن (حضور، شهریه، کتاب) را حذف کنید؟ این عمل غیرقابل بازگشت است.')) return;
+
+        classesCache = classesCache.filter(c => c.id !== classId);
+        studentsCache = studentsCache.filter(s => s.classId !== classId);
+        // Clean up attendance cache
+        const newAttendanceCache = {};
+        for (const key in attendanceCache) {
+            if (!key.startsWith(classId + '_')) {
+                newAttendanceCache[key] = attendanceCache[key];
+            }
+        }
+        attendanceCache = newAttendanceCache;
+
+        await saveAllData();
+        alert('کلاس با موفقیت حذف شد.');
+        $('class-delete-select').value = '';
+        displayClassList();
+        populateSelects();
+    }
+
+    function displayClassList() {
+        const listDiv = $('classes-list-admin');
+        if (!listDiv) return;
+        listDiv.innerHTML = '<table><thead><tr><th>نام کلاس</th><th>معلم</th><th>کتاب</th><th>تاریخ ایجاد</th><th>تعداد زبان‌آموز</th></tr></thead><tbody>' +
+            classesCache.map(c => {
+                const studentCount = studentsCache.filter(s => s.classId === c.id).length;
+                return `<tr>
+                            <td>${c.name}</td>
+                            <td>${c.teacher}</td>
+                            <td>${c.book}</td>
+                            <td>${c.created}</td>
+                            <td>${studentCount}</td>
+                        </tr>`;
+            }).join('') +
+            '</tbody></table>';
+    }
+
+    // ==========================================
+    // STUDENT MANAGEMENT
+    // ==========================================
+    async function saveStudent() {
+        const name = $('student-name').value.trim();
+        const nid = $('student-nid').value.trim();
+        const phone = $('student-phone').value.trim();
+        const classId = $('student-class').value;
+        if (!name || !nid || !classId) { alert('لطفاً نام، کد ملی و کلاس را پر کنید.'); return; }
+
+        // Check if student is already in a class with this NID
+        const existingStudents = studentsCache.filter(s => s.nid === nid);
+        const isAlreadyInThisClass = existingStudents.some(s => s.classId === classId);
+
+        if (isAlreadyInThisClass) {
+            alert('این زبان‌آموز با همین کد ملی قبلاً در این کلاس ثبت شده است. اطلاعات به روزرسانی شد.');
+            // Update existing entry
+            const index = studentsCache.findIndex(s => s.nid === nid && s.classId === classId);
+            studentsCache[index].name = name;
+            studentsCache[index].phone = phone;
+        } else {
+            // New entry
+            studentsCache.push({
+                nid: nid,
+                name: name,
+                phone: phone,
+                classId: classId,
+                className: classesCache.find(c => c.id === classId)?.name || 'N/A',
+                tuition: [],
+                books: [],
+                grades: {},
+                created: new Date().toLocaleDateString('fa-IR')
+            });
+            alert('زبان‌آموز با موفقیت به کلاس اضافه شد.');
+        }
+
+        await saveAllData();
+        $('student-name').value = ''; $('student-nid').value = ''; $('student-phone').value = ''; $('student-class').value = '';
+        displayStudentList();
+        populateDependentStudentSelect('student-remove-class', 'student-remove-select');
+    }
+
+    async function removeStudent() {
+        const classId = $('student-remove-class').value;
+        const nid = $('student-remove-select').value;
+        if (!classId || !nid) { alert('لطفاً کلاس و زبان‌آموز را انتخاب کنید.'); return; }
+        if (!confirm('آیا مطمئنید که می‌خواهید این زبان‌آموز را *فقط از این کلاس* حذف کنید؟ سوابق حضور، شهریه و کتاب‌های این کلاس نیز پاک می‌شود.')) return;
+
+        const initialCount = studentsCache.length;
+        studentsCache = studentsCache.filter(s => !(s.nid === nid && s.classId === classId));
+
+        if (studentsCache.length === initialCount) { alert('خطا: زبان‌آموز یافت نشد.'); return; }
+
+        // Clean up attendance cache
+        const attendanceKeyPrefix = classId + '_' + nid;
+        for (const key in attendanceCache) {
+            if (key.startsWith(attendanceKeyPrefix)) {
+                delete attendanceCache[key];
+            }
+        }
+
+        await saveAllData();
+        alert('زبان‌آموز با موفقیت از کلاس حذف شد.');
+        $('student-remove-class').value = ''; $('student-remove-select').value = '';
+        displayStudentList();
+        populateDependentStudentSelect('student-remove-class', 'student-remove-select');
+    }
+
+    function displayStudentList() {
+        const listDiv = $('students-list-admin');
+        if (!listDiv) return;
+        listDiv.innerHTML = '<table><thead><tr><th>نام</th><th>کد ملی</th><th>شماره تماس</th><th>کلاس</th><th>تاریخ ثبت</th></tr></thead><tbody>' +
+            studentsCache.map(s => `<tr>
+                            <td>${s.name}</td>
+                            <td>${s.nid}</td>
+                            <td>${s.phone || 'N/A'}</td>
+                            <td>${s.className}</td>
+                            <td>${s.created}</td>
+                        </tr>`).join('') +
+            '</tbody></table>';
+    }
+
+    // ==========================================
+    // TEACHER MANAGEMENT
+    // ==========================================
+    async function saveTeacher() {
+        const name = $('teacher-name').value.trim();
+        const nid = $('teacher-nid').value.trim();
+        const phone = $('teacher-phone').value.trim();
+        if (!name || !nid) { alert('لطفاً نام و کد ملی را پر کنید.'); return; }
+
+        const existing = getEntryByNid(nid, teachersCache);
+        if (existing) {
+            existing.name = name;
+            existing.phone = phone;
+            alert('معلم با موفقیت ویرایش شد.');
+        } else {
+            teachersCache.push({
+                nid: nid,
+                name: name,
+                phone: phone,
+                created: new Date().toLocaleDateString('fa-IR')
+            });
+            alert('معلم جدید با موفقیت اضافه شد.');
+        }
+
+        await saveAllData();
+        $('teacher-name').value = ''; $('teacher-nid').value = ''; $('teacher-phone').value = '';
+        displayTeacherList();
+        populateSelects();
+    }
+
+    async function deleteTeacher() {
+        const nid = $('teacher-delete-select').value;
+        if (!nid) { alert('لطفاً یک معلم را انتخاب کنید.'); return; }
+        if (!confirm('آیا مطمئنید که می‌خواهید این معلم را حذف کنید؟')) return;
+
+        teachersCache = teachersCache.filter(t => t.nid !== nid);
+
+        // Remove teacher from any assigned classes
+        classesCache.forEach(c => {
+            if (c.teacherNid === nid) {
+                c.teacher = 'حذف شده';
+                c.teacherNid = '';
+            }
+        });
+
+        await saveAllData();
+        alert('معلم با موفقیت حذف شد.');
+        $('teacher-delete-select').value = '';
+        displayTeacherList();
+        populateSelects();
+    }
+
+    function displayTeacherList() {
+        const listDiv = $('teachers-list-admin');
+        if (!listDiv) return;
+        listDiv.innerHTML = '<table><thead><tr><th>نام</th><th>کد ملی</th><th>شماره تماس</th><th>تعداد کلاس</th></tr></thead><tbody>' +
+            teachersCache.map(t => {
+                const classCount = classesCache.filter(c => c.teacherNid === t.nid).length;
+                return `<tr>
+                            <td>${t.name}</td>
+                            <td>${t.nid}</td>
+                            <td>${t.phone || 'N/A'}</td>
+                            <td>${classCount}</td>
+                        </tr>`;
+            }).join('') +
+            '</tbody></table>';
+    }
+
+    // ==========================================
+    // ANNOUNCEMENT MANAGEMENT
+    // ==========================================
+    async function saveAnnouncement() {
+        const title = $('announcement-title').value.trim();
+        const text = $('announcement-text').value.trim();
+        if (!title || !text) { alert('لطفاً عنوان و متن اطلاعیه را پر کنید.'); return; }
+
+        announcementsCache.unshift({
+            title: title,
+            text: text,
+            date: new Date().toLocaleDateString('fa-IR')
+        });
+
+        await saveAllData();
+        alert('اطلاعیه با موفقیت ثبت شد.');
+        $('announcement-title').value = '';
+        $('announcement-text').value = '';
+        loadAnnouncements();
+    }
+
+    function loadAnnouncements() {
+        const listDiv = $('announcements-list-admin');
+        const latestDiv = $('latest-announcements-admin');
+        if (!listDiv && !latestDiv) return;
+
+        if (listDiv) {
+            listDiv.innerHTML = '';
+            announcementsCache.forEach(a => {
+                const d = document.createElement('div');
+                d.className = 'card';
+                d.style.marginBottom = '6px';
+                d.innerHTML = `<strong>${a.title}</strong><span style="float:left">${a.date}</span><p style="margin-top:4px">${a.text}</p>`;
+                listDiv.appendChild(d);
+            });
+        }
+
+        if (latestDiv) {
+            latestDiv.innerHTML = announcementsCache.slice(0, 3).map(a => `
+                <div style="border-right: 3px solid #2ea043; padding-right: 10px; margin-bottom: 8px;">
+                    <strong>${a.title}</strong> <small style="float:left;">${a.date}</small>
+                    <p style="margin-top:4px; font-size:14px;">${a.text.substring(0, 50)}...</p>
+                </div>
+            `).join('') || '<p>اطلاعیه‌ای وجود ندارد.</p>';
+        }
+    }
+
+    // ==========================================
+    // TUITION/BOOK MANAGEMENT
+    // ==========================================
+    async function saveTuition() {
+        const classId = $('tuition-class').value;
+        const nid = $('tuition-student-select').value;
+        const amount = $('tuition-amount').value;
+        const date = $('tuition-date').value;
+        if (!classId || !nid || !amount || !date) { alert('لطفاً همه فیلدها را پر کنید.'); return; }
+
+        const entry = studentsCache.find(s => s.nid === nid && s.classId === classId);
+        if (!entry) { alert('خطا: زبان‌آموز در این کلاس یافت نشد.'); return; }
+
+        if (!entry.tuition.some(t => t.date === date && t.amount === amount)) {
+            entry.tuition.push({ date, amount });
+            await saveAllData();
+            alert('شهریه با موفقیت ثبت شد.');
+        } else {
+            alert('این پرداخت شهریه قبلاً ثبت شده است.');
+        }
+
+        $('tuition-amount').value = '';
+        $('tuition-class').value = '';
+        $('tuition-student-select').value = '';
+    }
+
+    async function saveBook() {
+        const classId = $('book-class-select').value;
+        const nid = $('book-student-select').value;
+        const name = $('book-name').value;
+        const date = $('book-date').value;
+        if (!classId || !nid || !name || !date) { alert('لطفاً همه فیلدها را پر کنید.'); return; }
+
+        const entry = studentsCache.find(s => s.nid === nid && s.classId === classId);
+        if (!entry) { alert('خطا: زبان‌آموز در این کلاس یافت نشد.'); return; }
+
+        if (!entry.books.some(b => b.name === name)) {
+            entry.books.push({ name, date });
+            await saveAllData();
+            alert('سابقه کتاب با موفقیت ثبت شد.');
+        } else {
+            alert('این سابقه کتاب قبلاً ثبت شده است.');
+        }
+
+        $('book-name').value = '';
+        $('book-class-select').value = '';
+        $('book-student-select').value = '';
+    }
+
+    // ==========================================
+    // STUDENT SEARCH (VIEW STATUS)
+    // ==========================================
+    function showStudentStatus(studentEntries) {
+        const out = $('search-output');
+        if (!out) return;
+        out.innerHTML = '';
+        if (studentEntries.length === 0) { out.innerHTML = '<div class="card" style="color:#f85149;">خطا: زبان‌آموز با این کد ملی یافت نشد.</div>'; return; }
+
+        const st = studentEntries[0]; // All entries have the same personal info
+        out.appendChild(document.createElement('h3')).textContent = 'وضعیت زبان‌آموز: ' + st.name + ' (' + st.nid + ')';
+        out.appendChild(document.createElement('p')).innerHTML = '<strong>شماره تماس:</strong> ' + (st.phone || 'ثبت نشده');
+
+        out.appendChild(document.createElement('h4')).textContent = 'وضعیت کلاس‌ها و حضور و غیاب';
+        const classTable = document.createElement('table');
+        classTable.innerHTML = '<thead><tr><th>نام کلاس</th><th>معلم</th><th>وضعیت کلی حضور</th><th>آخرین نمره</th><th>شهریه</th></tr></thead><tbody>';
+
+        studentEntries.forEach(entry => {
+            const classInfo = classesCache.find(c => c.id === entry.classId);
+            const teacherName = classInfo?.teacher || 'نامشخص';
+
+            const attendanceKey = entry.classId + '_' + entry.nid;
+            const termAttendance = attendanceCache[attendanceKey] || [];
+            const present = termAttendance.filter(v => v === true).length;
+            const absent = termAttendance.filter(v => v === false).length;
+            const remaining = termAttendance.filter(v => v === null).length;
+            const attendanceSummary = `${present} حضور / ${absent} غیبت / ${remaining} مانده`;
+
+            const grades = entry.grades || {};
+            const curTerm = `Term ${classesCache.indexOf(classInfo) + 1}`;
+            const gradeCur = grades[curTerm] !== undefined ? grades[curTerm] : 'ثبت نشده';
+
+            const tuitionPaid = entry.tuition.reduce((sum, t) => sum + parseInt(t.amount), 0).toLocaleString('fa-IR');
+            const tuitionCount = entry.tuition.length;
+
+            classTable.innerHTML += `<tr>
+                <td>${entry.className}</td>
+                <td>${teacherName}</td>
+                <td>${attendanceSummary}</td>
+                <td>${gradeCur}</td>
+                <td>${tuitionPaid} (${tuitionCount} پرداخت)</td>
+            </tr>`;
+        });
+        out.appendChild(classTable);
+
+        out.appendChild(document.createElement('h4')).textContent = 'کتاب‌های گذرانده شده (تاریخچه کل)';
+        if (st.books && st.books.length > 0) {
+            const bookList = document.createElement('ul');
+            st.books.forEach(b => {
+                const li = document.createElement('li');
+                li.textContent = `${b.name} (تاریخ اتمام: ${b.date})`;
+                bookList.appendChild(li);
+            });
+            out.appendChild(bookList);
+        } else {
+            out.appendChild(document.createElement('p')).textContent = 'سابقه کتابی ثبت نشده است.';
+        }
+    }
+
+    async function showStudentFromSearch() {
+        const nid = $('search-nid').value.trim();
+        if (!nid) { alert('لطفاً کد ملی را وارد کنید.'); return; }
+        const studentEntries = getStudentEntryByNid(nid);
+        showStudentStatus(studentEntries);
+    }
+
+    // ==========================================
+    // INITIAL LOAD FUNCTION (MODIFIED)
+    // ==========================================
+    async function initialLoadAdmin() {
+        try {
+            const [classes, students, teachers, attendance, announcements] = await Promise.all([
+                fetchData('classes', []),
+                fetchData('students', []),
+                fetchData('teachers', []),
+                fetchData('attendance', {}),
+                fetchData('announcements', [])
+            ]);
+
+            classesCache = classes;
+            studentsCache = students;
+            teachersCache = teachers;
+            attendanceCache = attendance;
+            announcementsCache = announcements;
+
+            // Display all required lists
+            displayClassList();
+            displayStudentList();
+            displayTeacherList();
+            loadAnnouncements();
+            populateSelects();
+
+            // Populate Dashboard Stats
+            $('stat-classes').textContent = classesCache.length;
+            $('stat-students').textContent = new Set(studentsCache.map(s => s.nid)).size; // Unique NIDs
+            $('stat-teachers').textContent = teachersCache.length;
+
+            // Setup Event Listeners
+            $('class-save').addEventListener('click', saveClass);
+            $('class-delete').addEventListener('click', deleteClass);
+            $('student-save').addEventListener('click', saveStudent);
+            $('student-remove').addEventListener('click', removeStudent);
+            $('teacher-save').addEventListener('click', saveTeacher);
+            $('teacher-delete').addEventListener('click', deleteTeacher);
+            $('announcement-save').addEventListener('click', saveAnnouncement);
+            $('tuition-save').addEventListener('click', saveTuition);
+            $('book-save').addEventListener('click', saveBook);
+            $('search-show').addEventListener('click', showStudentFromSearch);
+
+            $('tuition-class').addEventListener('change', () => populateDependentStudentSelect('tuition-class', 'tuition-student-select'));
+            $('book-class-select').addEventListener('change', () => populateDependentStudentSelect('book-class-select', 'book-student-select'));
+            $('student-remove-class').addEventListener('change', () => populateDependentStudentSelect('student-remove-class', 'student-remove-select'));
+
+            // Set default view content (Dashboard)
+            document.getElementById('content').innerHTML = document.getElementById('admin-dashboard').outerHTML;
+            // Re-bind listeners that were on dynamic elements
+            $('search-show').addEventListener('click', showStudentFromSearch);
+            $('tuition-save').addEventListener('click', saveTuition);
+            $('book-save').addEventListener('click', saveBook);
+            $('tuition-class').addEventListener('change', () => populateDependentStudentSelect('tuition-class', 'tuition-student-select'));
+            $('book-class-select').addEventListener('change', () => populateDependentStudentSelect('book-class-select', 'book-student-select'));
+            // Re-populate selects after setting innerHTML
+            populateSelects();
+            loadAnnouncements();
+            // Re-set dashboard stats
+            $('stat-classes').textContent = classesCache.length;
+            $('stat-students').textContent = new Set(studentsCache.map(s => s.nid)).size;
+            $('stat-teachers').textContent = teachersCache.length;
+
+
+        } catch (error) {
+            console.error("Initialization failed: ", error);
+            alert("خطا در بارگذاری اولیه اطلاعات: " + error.message);
+        }
+    }
+
+    window.onload = initialLoadAdmin;
+</script>
+
+</body>
+</html>
